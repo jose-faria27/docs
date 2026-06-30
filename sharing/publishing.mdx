@@ -1,0 +1,95 @@
+---
+title: "Publish and Share Maps with a Public or Private Link"
+sidebarTitle: "Publishing"
+description: "Publish your Geo Web IW map to generate a shareable link. Configure public access, password protection, and link expiry for external sharing."
+---
+
+Publishing a map in Geo Web IW converts your working project into a shareable, standalone experience. Whether you're distributing spatial insights to a client, embedding a map in a report, or collaborating with a team, publishing gives you full control over who can access your map and for how long.
+
+<Warning>
+  Public maps are accessible to **anyone** who has the URL — including search engine crawlers if the link is posted publicly. Use password protection or the Private access level whenever your map contains sensitive, proprietary, or personally identifiable location data.
+</Warning>
+
+## Publish Your Map
+
+<Steps>
+  <Step title="Open the map in the editor">
+    Navigate to your project and open the map you want to share. Make sure you've saved all your latest changes before publishing.
+  </Step>
+  <Step title="Click 'Publish' in the top-right toolbar">
+    The **Publish** button appears in the toolbar at the top-right of the editor. Clicking it opens the publishing panel.
+  </Step>
+  <Step title="Choose an access level">
+    Select one of three access modes for your published map:
+
+    <CardGroup cols={3}>
+      <Card title="Public" icon="globe">
+        Anyone with the link can view the map — no sign-in required. Best for public-facing dashboards and reports.
+      </Card>
+      <Card title="Password Protected" icon="lock">
+        Viewers must enter a password before accessing the map. Ideal for client deliverables and external reviews.
+      </Card>
+      <Card title="Private" icon="shield">
+        Only members of your workspace can view the map. Use this for internal projects that aren't ready for external eyes.
+      </Card>
+    </CardGroup>
+  </Step>
+  <Step title="Optionally set a link expiry date">
+    Toggle **Link Expiry** and pick a date. After that date, the link automatically returns a `403 Forbidden` response and you must republish or extend the expiry to restore access.
+  </Step>
+  <Step title="Copy the generated URL">
+    Once you confirm your settings, Geo Web IW generates a unique shareable URL. Click **Copy Link** to copy it to your clipboard, then share it however you like — email, Slack, a report, or an embed.
+  </Step>
+</Steps>
+
+<Tip>
+  Before sending your link to anyone, click the **Preview** button in the publishing panel. Preview opens the published view in a new tab so you can verify the layout, layer visibility, and interactivity exactly as your audience will see it — without affecting the live link.
+</Tip>
+
+---
+
+## Published Map Settings
+
+After a map is published, you can control how future saves and edits are reflected.
+
+<Accordion title="Auto-update vs. manual republish">
+  Toggle **Re-publishable Updates** in the published map settings panel:
+
+  - **Enabled (default):** Every time you save changes in the editor, the published map updates automatically. Viewers always see your latest work without any extra steps.
+  - **Disabled:** The published map is frozen at the version you published. Changes you make in the editor are invisible to external viewers until you click **Republish** manually.
+
+  Disabling auto-update is useful when you want to stage edits and release them on your own schedule — for example, preparing a quarterly report update without disrupting a live client view.
+</Accordion>
+
+---
+
+## Custom Subdomain
+
+<Info>
+  Custom subdomain support is available on **Pro** and **Enterprise** plans.
+</Info>
+
+Instead of the default `maps.geowebhq.com` domain, you can serve published maps from your own branded domain, such as `maps.yourcompany.com`.
+
+To configure a custom domain:
+
+1. Go to **Settings → Workspace → Custom Domain**.
+2. Enter the subdomain you want to use (e.g., `maps.yourcompany.com`).
+3. Follow the DNS instructions to add a `CNAME` record pointing to `custom.geowebhq.com`.
+4. Once DNS propagates (typically 5–30 minutes), Geo Web IW provisions an SSL certificate automatically.
+
+All published map URLs in your workspace will then resolve under your custom domain.
+
+---
+
+## Unpublishing a Map
+
+To remove public access to a map, open the publishing panel in the editor and click **Unpublish**. This action:
+
+- Immediately invalidates the shareable URL — visitors who follow the old link will see a `404 Not Found` response.
+- Does **not** delete the map or any of its data from your workspace.
+- Can be reversed at any time by publishing the map again (a new URL is generated).
+
+<Note>
+  Unpublishing does not notify anyone who previously received the link. If you need to communicate the change, do so directly with your collaborators.
+</Note>

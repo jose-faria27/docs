@@ -1,0 +1,83 @@
+---
+title: "Create and Configure an Interactive Map"
+sidebarTitle: "Creating Maps"
+description: "Step-by-step guide to creating a new map in Geo Web IW, setting the basemap, configuring viewport defaults, and adding initial layers."
+---
+
+Creating a map in Geo Web IW takes under two minutes. You give the map a name, pick a basemap that suits your data's visual context, lock in the default viewport your audience will land on, and then layer in your data sources. The result is a shareable, interactive map that updates live as your underlying data changes.
+
+## Create a New Map
+
+<Steps>
+  <Step title="Open your project and click New Map">
+    Navigate to your project's **Maps** tab from the left sidebar. Click the **+ New Map** button in the top-right corner. The map editor opens with a blank Standard basemap and a default world-level viewport.
+  </Step>
+
+  <Step title="Name the map and add an optional description">
+    In the **Properties** panel on the right, type a name in the **Title** field. A clear, descriptive name (for example, *Q3 Site Risk Assessment* or *Delivery Zone Coverage*) helps teammates find the right map. Optionally add a **Description** to explain the map's purpose — this text appears in search results and sharing previews.
+  </Step>
+
+  <Step title="Choose a basemap">
+    Click the **Basemap** selector in the Properties panel. Choose from **Standard**, **Satellite**, **Terrain**, **Dark**, **Light**, or **Custom**. If you select **Custom**, paste your XYZ raster tile URL into the field that appears. The map canvas updates immediately so you can verify the tiles look correct before moving on.
+
+    <Tip>
+      Use **Satellite** or **Terrain** when your audience needs real-world visual reference. Use **Dark** or **Light** for internal dashboards where clean, high-contrast data visibility matters more than geographic familiarity.
+    </Tip>
+  </Step>
+
+  <Step title="Set the default viewport">
+    Scroll to the **Viewport** section in the Properties panel. You have two options:
+
+    - **Manual** — Enter a center longitude and latitude, a zoom level (0–22), and optionally a pitch (0–60°) and bearing (0–360°).
+    - **Fit to data** — Click **Fit to first layer** and Geo Web IW calculates a viewport that frames all features in your first layer. This option becomes available after you add a layer in the next step.
+
+    <Note>
+      If you skip this step, the map opens at zoom level 2 centered on 0°, 0°. Set a meaningful default viewport before sharing so your audience lands in the right place.
+    </Note>
+  </Step>
+
+  <Step title="Add your first layer">
+    Click **+ Add Layer** at the bottom of the **Layers** panel on the left. Select a data source from your connected sources, choose a layer type (Point, Line, Polygon, Raster, Heatmap, or Cluster), and give the layer a name. See [Layers](/maps/layers) for a full walkthrough of layer configuration options.
+  </Step>
+
+  <Step title="Save the map">
+    Press **Cmd+S** (macOS) or **Ctrl+S** (Windows/Linux) to save immediately, or click the **Save** button in the top toolbar. Your map is now accessible from the project's Maps tab and can be shared via a link or embedded in a workflow.
+  </Step>
+</Steps>
+
+---
+
+## Map Settings Panel
+
+The **Properties** panel exposes the following map-level settings when no layer is selected. Click anywhere on the canvas background to deselect a layer and reveal these options.
+
+| Setting | Description |
+|---|---|
+| **Title** | The display name of the map shown in the project library and sharing previews. |
+| **Description** | Optional free-text description. Supports plain text only — no markdown. |
+| **Projection** | Coordinate projection used to render the map. Defaults to **Web Mercator (EPSG:3857)**. Switch to **Globe** for world-spanning datasets. |
+| **Max zoom** | The furthest zoom level a viewer can reach. Clamp this to prevent over-zooming on low-resolution data. |
+| **Min zoom** | The most zoomed-out level a viewer can reach. Use to prevent disorienting world-level views. |
+| **Pan** | Toggle whether viewers can pan the map. Disable to lock the viewport to your configured center. |
+| **Zoom** | Toggle scroll and pinch-to-zoom. Disable for fixed-extent embeds like report thumbnails. |
+| **Rotate** | Toggle whether viewers can rotate the bearing. Disable to enforce a north-up view. |
+
+<Warning>
+  Disabling **Pan**, **Zoom**, or **Rotate** affects all viewers of the map, including your teammates. Use these locks only for published, read-only embeds — not for working maps your team actively edits.
+</Warning>
+
+---
+
+## Autosave and Manual Save
+
+<Note>
+  Geo Web IW autosaves your map every 30 seconds. The last-saved timestamp appears in the status bar at the bottom of the editor. Press **Cmd/Ctrl+S** at any time to force an immediate save.
+</Note>
+
+---
+
+## Duplicate a Map as a Template
+
+<Tip>
+  Instead of starting from scratch, duplicate an existing map to reuse its basemap, viewport, layer structure, and styles. Open the Maps tab, hover over any map card, click the **⋯** menu, and select **Duplicate**. Rename the duplicate and swap in a new data source to spin up a new map in seconds.
+</Tip>

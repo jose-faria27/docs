@@ -1,13 +1,11 @@
 {
-  "$schema": "https://mintlify.com/docs.json",
+  "projectType": "saas",
+  "projectName": "Geo Web IW",
+  "projectDescription": "A geospatial web platform that enables teams to build, automate, and share interactive map-driven workflows for location intelligence and spatial data analysis.",
   "theme": "luma",
-  "name": "Geo Web IW",
-  "colors": {
-    "primary": "#ef7025",
-    "light": "#eec9bc",
-    "dark": "#4fa1ab"
-  },
-  "favicon": "/favicon.svg",
+  "primaryColor": "#ef7025",
+  "lightColor": "#eec9bc",
+  "darkColor": "#4fa1ab",
   "navigation": {
     "tabs": [
       {
@@ -84,20 +82,33 @@
       }
     ]
   },
-  "navbar": {
-    "links": [
-      {
-        "label": "Support",
-        "href": "mailto:support@geowebhq.com"
-      }
-    ],
-    "primary": {
-      "type": "button",
-      "label": "Sign In",
-      "href": "https://app.geowebhq.com"
-    }
-  },
-  "footer": {
-    "socials": {}
-  }
+  "keyFeatures": [
+    "Interactive map creation and configuration",
+    "Layer management with vector, raster, and live data sources",
+    "Intelligent workflow automation triggered by spatial events",
+    "Spatial data import/export supporting GeoJSON, Shapefile, CSV, KML",
+    "Spatial queries and geofencing",
+    "Role-based sharing and publishing",
+    "Embeddable map widgets for external sites",
+    "REST API for programmatic access",
+    "Webhook integrations for real-time notifications",
+    "Team collaboration with comment and annotation tools"
+  ],
+  "publicApiSurface": [
+    "GET /maps",
+    "POST /maps",
+    "GET /maps/{id}",
+    "PUT /maps/{id}",
+    "DELETE /maps/{id}",
+    "GET /maps/{id}/layers",
+    "POST /maps/{id}/layers",
+    "GET /workflows",
+    "POST /workflows",
+    "POST /workflows/{id}/run",
+    "GET /data/sources",
+    "POST /data/sources/upload",
+    "POST /data/query",
+    "GET /webhooks",
+    "POST /webhooks"
+  ]
 }

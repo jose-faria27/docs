@@ -1,0 +1,98 @@
+---
+title: "API Rate Limits and Quota Management in Geo Web IW"
+sidebarTitle: "Rate Limits"
+description: "Understand the Geo Web IW API rate limits per plan tier, how to read rate limit headers, and best practices for staying within quota."
+---
+
+Rate limits keep the Geo Web IW API fast and reliable for every user by preventing any single client from consuming a disproportionate share of capacity. Every plan tier carries a per-minute and per-day request quota. When you exceed either limit, the API returns a `429 Too Many Requests` response until the window resets.
+
+## Rate Limit Tiers
+
+Your quota depends on your account's plan tier. Limits apply across all API keys on your account — creating additional keys does not increase your total quota.
+
+| Plan | Requests / minute | Requests / day |
+|---|---|---|
+| **Free** | 100 | 10,000 |
+| **Pro** | 1,000 | 500,000 |
+| **Enterprise** | Custom | Custom |
+
+<Info>
+  Enterprise plans offer customized rate limits tailored to your workload. [Contact the sales team](mailto:sales@geowebhq.com) to discuss your requirements.
+</Info>
+
+## Rate Limit Response Headers
+
+Every API response — whether successful or not — includes three headers that tell you your current quota status. Check these headers proactively to avoid hitting the limit unexpectedly.
+
+| Header | Type | Description |
+|---|---|---|
+| `X-RateLimit-Limit` | integer | The maximum number of requests allowed in the current window for your plan. |
+| `X-RateLimit-Remaining` | integer | The number of requests you can still make before the window resets. |
+| `X-RateLimit-Reset` | Unix timestamp | The time at which the current window expires and your quota is restored. |
+
+A response with a healthy quota budget looks like this:
+
+```http
+HTTP/2 200
+X-RateLimit-Limit: 1000
+X-RateLimit-Remaining: 847
+X-RateLimit-Reset: 1730462400
+```
+
+Convert `X-RateLimit-Reset` from a Unix timestamp to a human-readable time using `new Date(timestamp * 1000)` in JavaScript or `datetime.fromtimestamp()` in Python.
+
+## Handling 429 Responses
+
+When your request exceeds the rate limit, the API returns `429 Too Many Requests` and adds a `Retry-After` header indicating how many seconds to wait before retrying.
+
+```http
+HTTP/2 429
+Retry-After: 12
+X-RateLimit-Limit: 100
+X-RateLimit-Remaining: 0
+X-RateLimit-Reset: 1730462412
+```
+
+Implement a retry loop that reads `Retry-After` and backs off before the next attempt. The example below retries up to three times with the server-directed wait time:
+
+```javascript
+async function fetchWithRetry(url, options, maxRetries = 3) {
+  for (let attempt = 0; attempt < maxRetries; attempt++) {
+    const res = await fetch(url, options);
+    if (res.status === 429) {
+      const retryAfter = parseInt(res.headers.get('Retry-After') || '5', 10);
+      await new Promise(resolve => setTimeout(resolve, retryAfter * 1000));
+      continue;
+    }
+    return res;
+  }
+  throw new Error('Max retries exceeded');
+}
+```
+
+<Warning>
+  Do not retry `429` responses without waiting. Hammering the API while rate-limited will not succeed and may result in a temporary extended backoff applied to your key.
+</Warning>
+
+## Best Practices
+
+Follow these patterns to make efficient use of your quota and avoid interruptions.
+
+<CardGroup cols={2}>
+  <Card title="Batch Your Requests" icon="layer-group">
+    Combine multiple operations into a single request wherever the API supports batch endpoints. Fewer requests consume less quota and reduce latency.
+  </Card>
+  <Card title="Cache Read Responses" icon="database">
+    Store responses for read-heavy endpoints locally and revalidate on a schedule. Map metadata and layer configurations change infrequently — there is no need to fetch them on every page load.
+  </Card>
+  <Card title="Use Webhooks for Updates" icon="webhook">
+    Subscribe to Geo Web IW webhooks for real-time change notifications instead of polling the API on an interval. Polling is quota-inefficient; webhooks deliver events the moment they occur.
+  </Card>
+  <Card title="Monitor Remaining Quota" icon="chart-line">
+    Log `X-RateLimit-Remaining` in your application's telemetry. Set an alert threshold — for example, below 10% remaining — so you can investigate traffic spikes before they cause errors.
+  </Card>
+</CardGroup>
+
+<Note>
+  Rate limits are enforced **per API key**. Creating multiple keys across the same account does not increase your plan quota — the limits are aggregated at the account level.
+</Note>

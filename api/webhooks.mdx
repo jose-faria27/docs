@@ -1,0 +1,273 @@
+---
+title: "Webhooks API — Register and Manage Outbound Webhooks"
+sidebarTitle: "Webhooks API"
+description: "Register webhook endpoints to receive real-time notifications from Geo Web IW workflows. Manage webhook URLs, secrets, and delivery history via the API."
+---
+
+Webhooks are Geo Web IW's outbound notification mechanism. When a qualifying event occurs — a workflow execution completes, a feature changes, or a map is published — the platform sends an HTTP `POST` request to every registered endpoint that subscribes to that event type. Use webhooks to drive real-time integrations with alerting systems, data pipelines, BI dashboards, or any downstream service that needs to react immediately to changes in your spatial data.
+
+All management requests below require an `Authorization: Bearer YOUR_API_KEY` header. The base URL for the management API is `https://api.geowebhq.com/v1`. Webhook delivery payloads are sent from Geo Web IW servers to your registered URL — no authentication header is required on your receiving endpoint, but you should always verify the request signature (see [Signature verification](#signature-verification) below).
+
+---
+
+## Webhook events
+
+Subscribe to one or more of the following event types when registering a webhook endpoint:
+
+| Event | Fires when… |
+|---|---|
+| `workflow.executed` | A workflow completes an execution (success or failure). |
+| `feature.created` | A new feature is added to any data source in the project. |
+| `feature.updated` | An existing feature's geometry or properties are modified. |
+| `feature.deleted` | A feature is removed from a data source. |
+| `map.published` | A map is published or its published share link is updated. |
+
+---
+
+## Webhook payload structure
+
+Every delivery is a JSON `POST` request with a consistent envelope. The `data` field contains event-specific detail.
+
+```json
+{
+  "event": "workflow.executed",
+  "workflowId": "wf_abc123",
+  "executionId": "exec_xyz456",
+  "timestamp": "2024-11-01T12:00:00Z",
+  "data": {
+    "status": "success",
+    "source": "trigger",
+    "durationMs": 312
+  }
+}
+```
+
+For `feature.*` events the `data` object includes `sourceId`, `featureId`, and (for `created`/`updated`) the full GeoJSON `Feature` object. For `map.published`, `data` includes `mapId` and `shareUrl`.
+
+---
+
+## Signature verification
+
+Every delivery includes an `X-GeoWeb-Signature` header containing an HMAC-SHA256 digest of the raw request body, prefixed with `sha256=`. Always verify this signature before processing a payload to ensure the request genuinely originates from Geo Web IW and has not been tampered with.
+
+<Warning>
+  Verify signatures against the **raw** request body before any JSON parsing. Parsing and re-serialising the body before hashing will produce a different digest and cause verification to fail.
+</Warning>
+
+The following Node.js example shows a complete verification function using the built-in `crypto` module:
+
+```javascript
+const crypto = require('crypto');
+
+function verifySignature(rawBody, signature, secret) {
+  const expected = crypto
+    .createHmac('sha256', secret)
+    .update(rawBody)
+    .digest('hex');
+  return crypto.timingSafeEqual(
+    Buffer.from(`sha256=${expected}`),
+    Buffer.from(signature)
+  );
+}
+```
+
+Call this function with:
+- `rawBody` — the raw `Buffer` or string of the incoming request body, before any parsing.
+- `signature` — the value of the `X-GeoWeb-Signature` request header.
+- `secret` — the webhook secret you set when registering the endpoint.
+
+The function uses `timingSafeEqual` to prevent timing attacks. Reject any request where the function returns `false`.
+
+<Tip>
+  Store your webhook secret in an environment variable (e.g. `GEOWEB_WEBHOOK_SECRET`) rather than hard-coding it. Rotate it in the Geo Web IW dashboard and update your secret store whenever you suspect it has been compromised.
+</Tip>
+
+---
+
+## Retry behaviour
+
+<Note>
+  If your endpoint returns any non-2xx HTTP status code or does not respond within 10 seconds, Geo Web IW retries the delivery up to **3 times** using exponential backoff (30 s, 5 min, 30 min). After all attempts are exhausted the delivery is marked `failed` and recorded in the delivery log. You can inspect individual delivery attempts using the [List deliveries](#list-deliveries) endpoint.
+</Note>
+
+---
+
+## List webhooks
+
+Retrieve all webhook endpoints registered in your workspace.
+
+**`GET /webhooks`**
+
+### Response fields
+
+<ResponseField name="data" type="array">
+  Array of registered webhook objects.
+  <Expandable title="Webhook object">
+    <ResponseField name="id" type="string">Unique webhook identifier, prefixed `whk_`.</ResponseField>
+    <ResponseField name="url" type="string">The destination URL that receives deliveries.</ResponseField>
+    <ResponseField name="events" type="array">List of subscribed event type strings.</ResponseField>
+    <ResponseField name="active" type="boolean">Whether the webhook is currently receiving deliveries.</ResponseField>
+    <ResponseField name="createdAt" type="string">ISO 8601 creation timestamp.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl https://api.geowebhq.com/v1/webhooks \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+</CodeGroup>
+
+```json Response
+{
+  "data": [
+    {
+      "id": "whk_01hxghi",
+      "url": "https://ingest.example.com/geoweb",
+      "events": ["workflow.executed", "feature.created"],
+      "active": true,
+      "createdAt": "2024-10-05T15:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## Register a webhook
+
+Register a new endpoint to start receiving event deliveries. Choose the specific events you want to subscribe to — you will not receive deliveries for unsubscribed event types.
+
+**`POST /webhooks`**
+
+### Body parameters
+
+<ParamField body="url" type="string" required>
+  The HTTPS URL that Geo Web IW will `POST` event payloads to. HTTP (non-TLS) URLs are not accepted.
+</ParamField>
+
+<ParamField body="events" type="array" required>
+  Array of event type strings to subscribe to. At least one event is required. See [Webhook events](#webhook-events) for the full list of valid values.
+</ParamField>
+
+<ParamField body="secret" type="string" required>
+  A secret string used to sign deliveries. Choose a long, random value (at least 32 characters). Geo Web IW stores only a hashed version — store the original value securely as it cannot be retrieved after creation.
+</ParamField>
+
+Returns the created webhook object with HTTP **201 Created**. The `secret` field is not included in the response.
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.geowebhq.com/v1/webhooks \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "url": "https://ingest.example.com/geoweb",
+    "events": ["workflow.executed", "feature.created"],
+    "secret": "your-super-secret-signing-key-here"
+  }'
+```
+</CodeGroup>
+
+```json Response (201)
+{
+  "id": "whk_01hxghi",
+  "url": "https://ingest.example.com/geoweb",
+  "events": ["workflow.executed", "feature.created"],
+  "active": true,
+  "createdAt": "2024-11-01T12:00:00Z"
+}
+```
+
+---
+
+## Delete a webhook
+
+Remove a webhook registration. Geo Web IW immediately stops sending deliveries to the associated URL.
+
+**`DELETE /webhooks/{id}`**
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  The webhook ID to remove, e.g. `whk_01hxghi`.
+</ParamField>
+
+Returns **204 No Content** on success.
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE https://api.geowebhq.com/v1/webhooks/whk_01hxghi \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+</CodeGroup>
+
+```text Response (204)
+(empty body)
+```
+
+---
+
+## List deliveries
+
+Retrieve recent delivery attempts for a webhook endpoint to inspect payload details, response codes, and retry history.
+
+**`GET /webhooks/{id}/deliveries`**
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  The webhook ID whose delivery history you want to inspect.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="data" type="array">
+  Array of delivery attempt objects, most recent first.
+  <Expandable title="Delivery object">
+    <ResponseField name="id" type="string">Unique delivery attempt identifier.</ResponseField>
+    <ResponseField name="event" type="string">Event type that triggered this delivery.</ResponseField>
+    <ResponseField name="status" type="string">`delivered`, `failed`, or `pending`.</ResponseField>
+    <ResponseField name="responseCode" type="number">HTTP status code returned by your endpoint, or `null` if no response was received.</ResponseField>
+    <ResponseField name="attemptCount" type="number">Total number of delivery attempts made (1–4).</ResponseField>
+    <ResponseField name="deliveredAt" type="string">ISO 8601 timestamp of the most recent attempt.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl https://api.geowebhq.com/v1/webhooks/whk_01hxghi/deliveries \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+</CodeGroup>
+
+```json Response
+{
+  "data": [
+    {
+      "id": "dlv_001xabc",
+      "event": "workflow.executed",
+      "status": "delivered",
+      "responseCode": 200,
+      "attemptCount": 1,
+      "deliveredAt": "2024-11-01T12:00:05Z"
+    },
+    {
+      "id": "dlv_002xdef",
+      "event": "feature.created",
+      "status": "failed",
+      "responseCode": 503,
+      "attemptCount": 4,
+      "deliveredAt": "2024-11-01T12:31:05Z"
+    }
+  ]
+}
+```

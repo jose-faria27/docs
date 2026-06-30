@@ -1,0 +1,105 @@
+---
+title: "Maps in Geo Web IW: Interactive Spatial Visualization"
+sidebarTitle: "Overview"
+description: "Maps are the core visualization unit in Geo Web IW. Learn how maps are structured, what you can configure, and how to navigate the map editor."
+---
+
+Maps are the primary canvas in Geo Web IW. Every workflow you build, every spatial process you automate, and every location insight you share lives inside a map. A map combines a basemap, one or more data layers, viewport configuration, and interactive controls into a single shareable unit that your team and stakeholders can explore in the browser without any GIS software.
+
+## Map Anatomy
+
+A Geo Web IW map is composed of five core elements that work together to render and interact with spatial data.
+
+<CardGroup cols={2}>
+  <Card title="Basemap" icon="map">
+    The background tile layer that provides geographic context — roads, terrain, satellite imagery, or a custom tile source.
+  </Card>
+  <Card title="Layers Panel" icon="layer-group">
+    The ordered stack of vector, raster, heatmap, and cluster layers drawn on top of the basemap. Each layer connects to a data source.
+  </Card>
+  <Card title="Viewport Controls" icon="arrows-up-down-left-right">
+    Pan, zoom, pitch, and bearing settings that define the camera position when the map first loads.
+  </Card>
+  <Card title="Legend" icon="list">
+    An auto-generated or manually configured legend that documents the symbology used across your layers.
+  </Card>
+  <Card title="Toolbar" icon="wrench">
+    Quick-access actions: draw tools, measurement, search, share, and export controls displayed along the map edge.
+  </Card>
+</CardGroup>
+
+---
+
+## Basemap Options
+
+Geo Web IW ships with five managed basemaps and supports any custom raster tile endpoint.
+
+| Basemap | Best For |
+|---|---|
+| **Standard** | General-purpose mapping with roads, labels, and points of interest |
+| **Satellite** | Aerial and satellite imagery for site inspection and land analysis |
+| **Terrain** | Hillshade and contour context for elevation-sensitive workflows |
+| **Dark** | Low-light dashboards and high-contrast data overlays |
+| **Light** | Clean backgrounds that let colorful data layers stand out |
+| **Custom** | Any XYZ or TMS raster tile URL you supply |
+
+To use a custom basemap, select **Custom** from the basemap picker and paste your raster tile URL in the format `https://tiles.example.com/{z}/{x}/{y}.png`. Geo Web IW validates the URL and previews the tiles before saving.
+
+<Note>
+  Custom basemap tiles must be served over HTTPS. HTTP tile URLs are blocked by browser security policies and will not load.
+</Note>
+
+---
+
+## Viewport Settings
+
+The viewport defines the initial camera position when a user opens your map. All four settings are optional — if you leave them unset, Geo Web IW fits the viewport to the bounding box of your first layer.
+
+| Setting | Description | Example |
+|---|---|---|
+| **Center coordinates** | Longitude and latitude of the map center | `-73.985, 40.748` |
+| **Zoom level** | Integer or decimal from `0` (global) to `22` (building) | `12` |
+| **Pitch** | Vertical tilt in degrees, `0` (flat) to `60` (angled) | `30` |
+| **Bearing** | Compass rotation in degrees, `0` = north-up | `45` |
+
+<Tip>
+  Use pitch and bearing together to create a tilted 3D perspective. This works especially well with extruded polygon layers showing building heights or volumetric data.
+</Tip>
+
+---
+
+## Map Editor Overview
+
+The map editor is the full-screen workspace where you build and configure your map. It is divided into four panels.
+
+<Accordion title="Left panel — Layers">
+  Lists every layer in the map in render order (bottom to top). Drag layers to reorder them, click the eye icon to toggle visibility, and click a layer name to open its style and data settings.
+</Accordion>
+
+<Accordion title="Right panel — Properties">
+  Context-sensitive settings for whatever you have selected. When nothing is selected, it shows map-level settings: title, basemap, projection, and viewport. When a layer is selected, it shows layer-specific style and filter options.
+</Accordion>
+
+<Accordion title="Top bar — Toolbar">
+  Contains draw tools, measurement tools, the search bar, undo/redo controls, and the **Share** and **Export** buttons.
+</Accordion>
+
+<Accordion title="Bottom bar — Status bar">
+  Displays the cursor's current longitude/latitude, the active zoom level, and a scale indicator.
+</Accordion>
+
+---
+
+## Continue Learning
+
+<CardGroup cols={3}>
+  <Card title="Creating Maps" icon="plus" href="/maps/creating-maps">
+    Set up a new map from scratch, choose a basemap, and configure your default viewport.
+  </Card>
+  <Card title="Layers" icon="layer-group" href="/maps/layers">
+    Add vector and raster layers, reorder them, and connect them to your data sources.
+  </Card>
+  <Card title="Styling" icon="palette" href="/maps/styling">
+    Apply fill colors, strokes, and data-driven style rules to make your layers meaningful.
+  </Card>
+</CardGroup>

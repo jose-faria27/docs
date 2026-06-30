@@ -1,0 +1,440 @@
+---
+title: "Workflows API — Manage and Trigger Automations"
+sidebarTitle: "Workflows API"
+description: "REST API endpoints to create, update, enable/disable, and manually trigger Geo Web IW workflows and retrieve execution history."
+---
+
+Workflows let you automate spatial processes — running buffering operations when a feature is created, firing alerts when data enters a boundary, or pushing results to a downstream system on a schedule. Use the Workflows API to build and manage these automations programmatically, trigger test runs during development, and audit every execution without opening the Geo Web IW UI.
+
+All requests require an `Authorization: Bearer YOUR_API_KEY` header. The base URL for every endpoint on this page is `https://api.geowebhq.com/v1`.
+
+---
+
+## List workflows
+
+List all workflows in a project, with optional filtering by status.
+
+**`GET /workflows`**
+
+### Query parameters
+
+<ParamField query="projectId" type="string" required>
+  Return workflows belonging to this project.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter by workflow status. One of: `active`, `paused`, `draft`.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="data" type="array">
+  Array of workflow summary objects.
+  <Expandable title="Workflow object">
+    <ResponseField name="id" type="string">Unique workflow identifier, prefixed `wf_`.</ResponseField>
+    <ResponseField name="name" type="string">Display name of the workflow.</ResponseField>
+    <ResponseField name="projectId" type="string">Project the workflow belongs to.</ResponseField>
+    <ResponseField name="status" type="string">Current status: `active`, `paused`, or `draft`.</ResponseField>
+    <ResponseField name="trigger" type="object">Trigger configuration — type and associated settings.</ResponseField>
+    <ResponseField name="createdAt" type="string">ISO 8601 creation timestamp.</ResponseField>
+    <ResponseField name="updatedAt" type="string">ISO 8601 last-updated timestamp.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl "https://api.geowebhq.com/v1/workflows?projectId=proj_abc123&status=active" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+</CodeGroup>
+
+```json Response
+{
+  "data": [
+    {
+      "id": "wf_01hxdef",
+      "name": "Alert on Zone Entry",
+      "projectId": "proj_abc123",
+      "status": "active",
+      "trigger": {
+        "type": "feature.created",
+        "sourceId": "src_xyz789"
+      },
+      "createdAt": "2024-10-20T08:00:00Z",
+      "updatedAt": "2024-11-01T10:30:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## Create a workflow
+
+Define a new workflow with a trigger, optional conditions, and one or more actions.
+
+**`POST /workflows`**
+
+### Body parameters
+
+<ParamField body="name" type="string" required>
+  Human-readable name for the workflow.
+</ParamField>
+
+<ParamField body="projectId" type="string" required>
+  ID of the project to create the workflow in.
+</ParamField>
+
+<ParamField body="trigger" type="object" required>
+  Defines what starts the workflow.
+  <Expandable title="Trigger fields">
+    <ParamField body="type" type="string">
+      Trigger type. Common values: `feature.created`, `feature.updated`, `schedule`, `webhook.inbound`.
+    </ParamField>
+    <ParamField body="config" type="object">
+      Type-specific configuration. For `schedule`, include a `cron` expression. For feature events, include a `sourceId`.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="conditions" type="array">
+  Optional array of conditions that must all be true before actions run. Each condition is an object with `attribute`, `operator`, and `value`.
+</ParamField>
+
+<ParamField body="actions" type="array">
+  Ordered list of actions to execute. Each action object requires a `type` and a `config` block.
+  <Expandable title="Example action types">
+    <ParamField body="type" type="string">
+      Action type, e.g. `spatial.buffer`, `notify.email`, `webhook.send`, `data.write`.
+    </ParamField>
+    <ParamField body="config" type="object">
+      Action-specific parameters (destination URL, distance, target source, etc.).
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+Returns the created workflow object with HTTP **201 Created**.
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.geowebhq.com/v1/workflows \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Alert on Zone Entry",
+    "projectId": "proj_abc123",
+    "trigger": {
+      "type": "feature.created",
+      "config": {
+        "sourceId": "src_xyz789"
+      }
+    },
+    "conditions": [
+      {
+        "attribute": "properties.status",
+        "operator": "==",
+        "value": "active"
+      }
+    ],
+    "actions": [
+      {
+        "type": "notify.email",
+        "config": {
+          "to": "team@example.com",
+          "subject": "New feature detected in source"
+        }
+      }
+    ]
+  }'
+```
+</CodeGroup>
+
+```json Response (201)
+{
+  "id": "wf_01hxdef",
+  "name": "Alert on Zone Entry",
+  "projectId": "proj_abc123",
+  "status": "draft",
+  "trigger": {
+    "type": "feature.created",
+    "config": {
+      "sourceId": "src_xyz789"
+    }
+  },
+  "conditions": [
+    {
+      "attribute": "properties.status",
+      "operator": "==",
+      "value": "active"
+    }
+  ],
+  "actions": [
+    {
+      "type": "notify.email",
+      "config": {
+        "to": "team@example.com",
+        "subject": "New feature detected in source"
+      }
+    }
+  ],
+  "createdAt": "2024-11-01T12:00:00Z",
+  "updatedAt": "2024-11-01T12:00:00Z"
+}
+```
+
+---
+
+## Get a workflow
+
+Fetch the complete configuration of a single workflow, including its full trigger, conditions, and actions.
+
+**`GET /workflows/{id}`**
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  The workflow ID, e.g. `wf_01hxdef`.
+</ParamField>
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl https://api.geowebhq.com/v1/workflows/wf_01hxdef \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+</CodeGroup>
+
+```json Response
+{
+  "id": "wf_01hxdef",
+  "name": "Alert on Zone Entry",
+  "projectId": "proj_abc123",
+  "status": "active",
+  "trigger": {
+    "type": "feature.created",
+    "config": {
+      "sourceId": "src_xyz789"
+    }
+  },
+  "conditions": [
+    {
+      "attribute": "properties.status",
+      "operator": "==",
+      "value": "active"
+    }
+  ],
+  "actions": [
+    {
+      "type": "notify.email",
+      "config": {
+        "to": "team@example.com",
+        "subject": "New feature detected in source"
+      }
+    }
+  ],
+  "createdAt": "2024-10-20T08:00:00Z",
+  "updatedAt": "2024-11-01T10:30:00Z"
+}
+```
+
+---
+
+## Update a workflow
+
+Update a workflow's name, configuration, or status. To activate a draft workflow, set `status` to `active`. To pause a running workflow without deleting it, set `status` to `paused`.
+
+**`PUT /workflows/{id}`**
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  The workflow ID to update.
+</ParamField>
+
+### Body parameters
+
+<ParamField body="name" type="string">
+  Updated display name.
+</ParamField>
+
+<ParamField body="status" type="string">
+  New status. One of: `active`, `paused`, `draft`.
+</ParamField>
+
+<ParamField body="trigger" type="object">
+  Replacement trigger configuration. Replaces the existing trigger entirely.
+</ParamField>
+
+<ParamField body="conditions" type="array">
+  Updated conditions array. Replaces the existing conditions entirely.
+</ParamField>
+
+<ParamField body="actions" type="array">
+  Updated actions array. Replaces the existing actions entirely.
+</ParamField>
+
+Returns the full updated workflow object.
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl -X PUT https://api.geowebhq.com/v1/workflows/wf_01hxdef \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "status": "active"
+  }'
+```
+</CodeGroup>
+
+```json Response
+{
+  "id": "wf_01hxdef",
+  "name": "Alert on Zone Entry",
+  "projectId": "proj_abc123",
+  "status": "active",
+  "trigger": {
+    "type": "feature.created",
+    "config": {
+      "sourceId": "src_xyz789"
+    }
+  },
+  "conditions": [],
+  "actions": [
+    {
+      "type": "notify.email",
+      "config": {
+        "to": "team@example.com",
+        "subject": "New feature detected in source"
+      }
+    }
+  ],
+  "createdAt": "2024-10-20T08:00:00Z",
+  "updatedAt": "2024-11-02T09:00:00Z"
+}
+```
+
+---
+
+## Trigger a manual run
+
+Manually execute a workflow to test its logic without waiting for the real trigger to fire. Optionally pass a simulated trigger payload to exercise specific conditions and action branches.
+
+**`POST /workflows/{id}/run`**
+
+<Note>
+  Manual runs count toward your monthly execution quota but are tagged with `source: manual` in the execution log so you can distinguish them from live runs.
+</Note>
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  The workflow ID to trigger.
+</ParamField>
+
+### Body parameters
+
+<ParamField body="payload" type="object">
+  Optional simulated trigger payload. Use this to pass mock feature data or event properties that the workflow's conditions and actions will process.
+</ParamField>
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.geowebhq.com/v1/workflows/wf_01hxdef/run \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "payload": {
+      "feature": {
+        "type": "Feature",
+        "properties": { "status": "active", "assetId": "asset_001" },
+        "geometry": {
+          "type": "Point",
+          "coordinates": [-74.006, 40.7128]
+        }
+      }
+    }
+  }'
+```
+</CodeGroup>
+
+```json Response
+{
+  "executionId": "exec_abc123",
+  "status": "running"
+}
+```
+
+Use the returned `executionId` to poll the execution detail via the [List executions](#list-executions) endpoint.
+
+---
+
+## List executions
+
+Retrieve the execution history for a workflow to review past runs, inspect outputs, and diagnose failures.
+
+**`GET /workflows/{id}/executions`**
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  The workflow ID whose execution history you want to retrieve.
+</ParamField>
+
+### Query parameters
+
+<ParamField query="limit" type="number" default="25">
+  Maximum number of execution records to return. Maximum is `100`.
+</ParamField>
+
+<ParamField query="status" type="string">
+  Filter executions by result. One of: `success`, `failed`, `running`.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="data" type="array">
+  Array of execution summary objects.
+  <Expandable title="Execution object">
+    <ResponseField name="id" type="string">Unique execution ID, prefixed `exec_`.</ResponseField>
+    <ResponseField name="workflowId" type="string">Parent workflow ID.</ResponseField>
+    <ResponseField name="status" type="string">Execution result: `success`, `failed`, or `running`.</ResponseField>
+    <ResponseField name="source" type="string">`trigger` for automatic runs, `manual` for API-initiated runs.</ResponseField>
+    <ResponseField name="startedAt" type="string">ISO 8601 timestamp when the execution began.</ResponseField>
+    <ResponseField name="completedAt" type="string">ISO 8601 timestamp when the execution finished (null if still running).</ResponseField>
+    <ResponseField name="error" type="string">Error message if `status` is `failed`, otherwise null.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl "https://api.geowebhq.com/v1/workflows/wf_01hxdef/executions?limit=10&status=failed" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+</CodeGroup>
+
+```json Response
+{
+  "data": [
+    {
+      "id": "exec_abc123",
+      "workflowId": "wf_01hxdef",
+      "status": "failed",
+      "source": "trigger",
+      "startedAt": "2024-11-01T08:15:00Z",
+      "completedAt": "2024-11-01T08:15:03Z",
+      "error": "Action 'notify.email' failed: SMTP connection refused"
+    }
+  ]
+}
+```

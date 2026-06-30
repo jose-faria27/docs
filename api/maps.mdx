@@ -1,0 +1,311 @@
+---
+title: "Maps API — Create, Read, Update, Delete Maps"
+sidebarTitle: "Maps API"
+description: "REST API endpoints for managing Geo Web IW maps: list all maps, create a new map, fetch map details, update settings, and delete a map."
+---
+
+Maps are the core canvas of Geo Web IW — every layer, workflow, and shared view is anchored to one. Use the Maps API to programmatically create and configure maps, update their basemap and viewport settings, and clean up maps you no longer need, all without leaving your own tooling or CI pipeline.
+
+All requests require an `Authorization: Bearer YOUR_API_KEY` header. The base URL for every endpoint on this page is `https://api.geowebhq.com/v1`.
+
+---
+
+## List maps
+
+<Note>
+  Maps are scoped to a workspace. Every API key belongs to exactly one workspace, so this endpoint always returns maps within that workspace only.
+</Note>
+
+Retrieve a paginated list of all maps in your workspace. Filter the results to a specific project by passing `projectId`.
+
+**`GET /maps`**
+
+### Query parameters
+
+<ParamField query="page" type="number" default="1">
+  The page number to return. Starts at `1`.
+</ParamField>
+
+<ParamField query="pageSize" type="number" default="20">
+  Number of maps to return per page. Maximum is `100`.
+</ParamField>
+
+<ParamField query="projectId" type="string">
+  When provided, only maps belonging to this project are returned.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="data" type="array">
+  Array of map objects.
+  <Expandable title="Map object">
+    <ResponseField name="id" type="string">Unique map identifier, prefixed `map_`.</ResponseField>
+    <ResponseField name="name" type="string">Human-readable name of the map.</ResponseField>
+    <ResponseField name="description" type="string">Optional description.</ResponseField>
+    <ResponseField name="projectId" type="string">ID of the project this map belongs to.</ResponseField>
+    <ResponseField name="basemap" type="string">Active basemap style: `standard`, `satellite`, `terrain`, `dark`, or `light`.</ResponseField>
+    <ResponseField name="viewport" type="object">
+      Last-saved viewport state.
+      <Expandable title="Viewport fields">
+        <ResponseField name="center" type="array">Longitude/latitude pair, e.g. `[-74.006, 40.7128]`.</ResponseField>
+        <ResponseField name="zoom" type="number">Zoom level between `0` and `22`.</ResponseField>
+      </Expandable>
+    </ResponseField>
+    <ResponseField name="createdAt" type="string">ISO 8601 creation timestamp.</ResponseField>
+    <ResponseField name="updatedAt" type="string">ISO 8601 last-updated timestamp.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+<ResponseField name="meta" type="object">
+  Pagination metadata: `page`, `pageSize`, `total`, `totalPages`.
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl https://api.geowebhq.com/v1/maps?page=1&pageSize=5&projectId=proj_abc123 \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+</CodeGroup>
+
+```json Response
+{
+  "data": [
+    {
+      "id": "map_01hx9k2pqr",
+      "name": "Downtown Coverage Analysis",
+      "description": "Q2 coverage heatmap for downtown corridor",
+      "projectId": "proj_abc123",
+      "basemap": "standard",
+      "viewport": {
+        "center": [-74.006, 40.7128],
+        "zoom": 13
+      },
+      "createdAt": "2024-10-15T09:22:00Z",
+      "updatedAt": "2024-11-01T14:05:33Z"
+    }
+  ],
+  "meta": {
+    "page": 1,
+    "pageSize": 5,
+    "total": 1,
+    "totalPages": 1
+  }
+}
+```
+
+---
+
+## Create a map
+
+Create a new, empty map inside a project. Add layers to it using the [Layers API](/api/layers).
+
+**`POST /maps`**
+
+### Body parameters
+
+<ParamField body="name" type="string" required>
+  Display name for the map. Must be between 1 and 128 characters.
+</ParamField>
+
+<ParamField body="projectId" type="string" required>
+  ID of the project to place the map in.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Optional plain-text description shown in the project overview.
+</ParamField>
+
+<ParamField body="basemap" type="string" default="standard">
+  Starting basemap style. One of: `standard`, `satellite`, `terrain`, `dark`, `light`.
+</ParamField>
+
+<ParamField body="viewport" type="object">
+  Initial viewport to centre the map on.
+  <Expandable title="Viewport fields">
+    <ParamField body="center" type="array">
+      `[longitude, latitude]` coordinate pair.
+    </ParamField>
+    <ParamField body="zoom" type="number">
+      Zoom level from `0` (world) to `22` (building level). Defaults to `2`.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+Returns the created map object with HTTP **201 Created**.
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.geowebhq.com/v1/maps \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Downtown Coverage Analysis",
+    "projectId": "proj_abc123",
+    "description": "Q2 coverage heatmap for downtown corridor",
+    "basemap": "satellite",
+    "viewport": {
+      "center": [-74.006, 40.7128],
+      "zoom": 13
+    }
+  }'
+```
+</CodeGroup>
+
+```json Response (201)
+{
+  "id": "map_01hx9k2pqr",
+  "name": "Downtown Coverage Analysis",
+  "description": "Q2 coverage heatmap for downtown corridor",
+  "projectId": "proj_abc123",
+  "basemap": "satellite",
+  "viewport": {
+    "center": [-74.006, 40.7128],
+    "zoom": 13
+  },
+  "createdAt": "2024-11-01T12:00:00Z",
+  "updatedAt": "2024-11-01T12:00:00Z"
+}
+```
+
+---
+
+## Get a map
+
+Fetch the full configuration object for a single map by its ID.
+
+**`GET /maps/{id}`**
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  The map ID, e.g. `map_01hx9k2pqr`.
+</ParamField>
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl https://api.geowebhq.com/v1/maps/map_01hx9k2pqr \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+</CodeGroup>
+
+```json Response
+{
+  "id": "map_01hx9k2pqr",
+  "name": "Downtown Coverage Analysis",
+  "description": "Q2 coverage heatmap for downtown corridor",
+  "projectId": "proj_abc123",
+  "basemap": "satellite",
+  "viewport": {
+    "center": [-74.006, 40.7128],
+    "zoom": 13
+  },
+  "createdAt": "2024-11-01T12:00:00Z",
+  "updatedAt": "2024-11-01T14:05:33Z"
+}
+```
+
+---
+
+## Update a map
+
+Update any combination of a map's settings. Send only the fields you want to change — all other fields remain untouched.
+
+**`PUT /maps/{id}`**
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  The map ID to update.
+</ParamField>
+
+### Body parameters
+
+<ParamField body="name" type="string">
+  New display name for the map.
+</ParamField>
+
+<ParamField body="description" type="string">
+  Updated description.
+</ParamField>
+
+<ParamField body="basemap" type="string">
+  New basemap style. One of: `standard`, `satellite`, `terrain`, `dark`, `light`.
+</ParamField>
+
+<ParamField body="viewport" type="object">
+  New default viewport. Accepts the same `center` / `zoom` structure as the create endpoint.
+</ParamField>
+
+Returns the full updated map object.
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl -X PUT https://api.geowebhq.com/v1/maps/map_01hx9k2pqr \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "basemap": "dark",
+    "viewport": {
+      "center": [-73.985, 40.748],
+      "zoom": 14
+    }
+  }'
+```
+</CodeGroup>
+
+```json Response
+{
+  "id": "map_01hx9k2pqr",
+  "name": "Downtown Coverage Analysis",
+  "description": "Q2 coverage heatmap for downtown corridor",
+  "projectId": "proj_abc123",
+  "basemap": "dark",
+  "viewport": {
+    "center": [-73.985, 40.748],
+    "zoom": 14
+  },
+  "createdAt": "2024-11-01T12:00:00Z",
+  "updatedAt": "2024-11-02T09:15:10Z"
+}
+```
+
+---
+
+## Delete a map
+
+Permanently delete a map and all layers attached to it. This action is irreversible.
+
+**`DELETE /maps/{id}`**
+
+<Warning>
+  Deleting a map also deletes every layer it contains. The underlying data sources are **not** deleted and remain available in your project. Back up any layer configurations you want to preserve before proceeding.
+</Warning>
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  The map ID to delete.
+</ParamField>
+
+Returns **204 No Content** on success with an empty response body.
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE https://api.geowebhq.com/v1/maps/map_01hx9k2pqr \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+</CodeGroup>
+
+```text Response (204)
+(empty body)
+```

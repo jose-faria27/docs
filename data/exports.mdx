@@ -1,0 +1,153 @@
+---
+title: "Export and Download Spatial Data from Geo Web IW"
+sidebarTitle: "Exports"
+description: "Download your data as GeoJSON, Shapefile, or CSV from the UI or automate exports to cloud storage using the Geo Web IW workflow actions or REST API."
+---
+
+Exporting your data from Geo Web IW lets you share layers with external teams, feed downstream GIS tools, back up snapshots of live datasets, or archive processed results. You can trigger a one-time download directly from the UI, schedule recurring exports to cloud storage through Workflows, or pull data programmatically using the REST API.
+
+## Manual Export from the UI
+
+The quickest way to download a data source is directly from the Data Sources panel.
+
+<Steps>
+  <Step title="Open the data source">
+    Navigate to **Data Sources** in your project sidebar and click the name of the source you want to export.
+  </Step>
+  <Step title="Click Export">
+    On the data source detail page, click the **Export** button in the top-right corner.
+  </Step>
+  <Step title="Choose your format and CRS">
+    Select an output format from the dropdown:
+    - **GeoJSON** — a single `.geojson` file; best for web tools and APIs
+    - **Shapefile ZIP** — a `.zip` archive containing all required Shapefile components
+    - **CSV** — a flat text file with latitude and longitude columns; points only
+
+    Then choose a **Coordinate Reference System** (default: EPSG:4326 WGS84). Additional CRS options such as UTM zones and national grid systems are available in the list.
+  </Step>
+  <Step title="Optionally apply a filter">
+    Enable **Apply Filter** to restrict the export to a subset of features. You can filter by attribute value or by drawing a bounding box on the map preview.
+  </Step>
+  <Step title="Download your file">
+    Click **Download**. Files under 100 MB download immediately in your browser. For larger files, Geo Web IW prepares the export in the background and emails you a secure download link when it's ready.
+  </Step>
+</Steps>
+
+<Note>
+  Exported files reflect the state of the data **at the time of export**. For live-connected sources (REST API, ArcGIS Feature Service, PostGIS), the export captures the data currently held in Geo Web IW's cache — trigger a manual sync on the source first if you need the absolute latest records.
+</Note>
+
+## Scheduled Exports via Workflows
+
+Automate recurring exports using the **Export Layer Snapshot** workflow action. This is the recommended approach for delivering data to partner systems, populating data lakes, or maintaining versioned backups.
+
+<Steps>
+  <Step title="Open or create a workflow">
+    Go to **Workflows** in the left sidebar and open an existing workflow or create a new one.
+  </Step>
+  <Step title="Add the Export Layer Snapshot action">
+    Click **Add Step**, search for **Export Layer Snapshot**, and select it. Configure the source, output format, and optional attribute filter.
+  </Step>
+  <Step title="Connect a cloud storage destination">
+    Choose **Amazon S3** or **Google Cloud Storage** as the destination. Select a pre-configured connection from your workspace settings, or configure a new one (see [Cloud Storage Integrations](#cloud-storage-integrations) below).
+
+    Specify the target bucket and an optional key prefix or folder path to organize exported files.
+  </Step>
+  <Step title="Set your schedule">
+    Use the **Trigger** panel to set a cron-based schedule — for example, daily at 03:00 UTC. You can also chain this action to other workflow steps, such as running after an automatic data source sync.
+  </Step>
+</Steps>
+
+For a full guide on building automations, see the [Workflow Automation](/workflows/automation) documentation.
+
+## Export via the REST API
+
+Use the REST API to export a data source programmatically — useful for scripting one-off exports, integrating with CI pipelines, or pulling data into custom applications.
+
+Send a `GET` request to `/api/v1/data/sources/{id}/export` with the desired format as a query parameter.
+
+<CodeGroup>
+  ```bash GeoJSON
+  curl -X GET \
+    "https://app.geowebIW.com/api/v1/data/sources/src_abc123/export?format=geojson" \
+    -H "Authorization: Bearer <your-api-key>" \
+    -o my-export.geojson
+  ```
+
+  ```bash Shapefile ZIP
+  curl -X GET \
+    "https://app.geowebIW.com/api/v1/data/sources/src_abc123/export?format=shapefile" \
+    -H "Authorization: Bearer <your-api-key>" \
+    -o my-export.zip
+  ```
+
+  ```bash CSV
+  curl -X GET \
+    "https://app.geowebIW.com/api/v1/data/sources/src_abc123/export?format=csv" \
+    -H "Authorization: Bearer <your-api-key>" \
+    -o my-export.csv
+  ```
+</CodeGroup>
+
+**Supported query parameters:**
+
+<ParamField query="format" type="string" required>
+  Output format. One of: `geojson`, `shapefile`, `csv`.
+</ParamField>
+
+<ParamField query="crs" type="string">
+  Target coordinate reference system as an EPSG code. Defaults to `EPSG:4326`. Example: `crs=EPSG:32610`.
+</ParamField>
+
+<ParamField query="filter" type="string">
+  URL-encoded JSON filter expression to limit the exported features. Uses the same filter syntax as the query builder API.
+</ParamField>
+
+<ParamField query="page" type="integer">
+  Page number for paginated responses. Combine with `pageSize` for programmatic access to large datasets. Defaults to `1`.
+</ParamField>
+
+<ParamField query="pageSize" type="integer">
+  Number of features per page. Maximum: `10000`. Defaults to `1000`.
+</ParamField>
+
+## Cloud Storage Integrations
+
+Configure cloud storage connections once in your workspace settings, then reuse them across all export workflows and API calls.
+
+<Accordion title="Amazon S3">
+  1. Go to **Workspace Settings → Integrations → Cloud Storage** and click **Add S3 Connection**.
+  2. Provide your **AWS Region**, **Bucket Name**, and **Key Prefix** (optional folder path within the bucket).
+  3. Enter the **Access Key ID** and **Secret Access Key** for an IAM user or role with `s3:PutObject` permission on the target bucket.
+  4. Click **Test Connection** to verify credentials before saving.
+
+  **Minimum IAM policy:**
+
+  ```json
+  {
+    "Version": "2012-10-17",
+    "Statement": [
+      {
+        "Effect": "Allow",
+        "Action": ["s3:PutObject", "s3:GetObject"],
+        "Resource": "arn:aws:s3:::your-bucket-name/*"
+      }
+    ]
+  }
+  ```
+</Accordion>
+
+<Accordion title="Google Cloud Storage">
+  1. Go to **Workspace Settings → Integrations → Cloud Storage** and click **Add GCS Connection**.
+  2. Provide your **Bucket Name** and optional **Object Prefix**.
+  3. Upload a **Service Account Key** (JSON) for a service account that has the `Storage Object Creator` role on the target bucket.
+  4. Click **Test Connection** to confirm access before saving.
+
+  <Warning>
+    Store your service account key securely. Geo Web IW encrypts it at rest, but you should also restrict the key's permissions to the minimum required — write access to a single bucket only.
+  </Warning>
+</Accordion>
+
+<Tip>
+  For large datasets, avoid bulk UI exports and instead use the REST API with the `page` and `pageSize` parameters to retrieve features in manageable chunks. This approach is more reliable over slow or throttled connections and lets you resume from a specific page if a request fails.
+</Tip>

@@ -1,0 +1,143 @@
+---
+title: "Run Spatial Queries on Your Geo Web IW Data"
+sidebarTitle: "Spatial Queries"
+description: "Filter, intersect, buffer, and aggregate geospatial features using the Geo Web IW query builder or REST API without writing SQL."
+---
+
+Spatial queries let you ask location-based questions about your data — find all stores within 2 km of a warehouse, count customer orders per sales territory, or isolate features that intersect a flood zone. Geo Web IW provides a visual query builder for interactive exploration and a REST API endpoint for integrating queries into automated workflows, all without writing a line of SQL.
+
+## Query Builder UI
+
+Access the query builder by opening any data source in your project and clicking the **Query** tab. The builder presents a step-by-step interface where you add, reorder, and configure operations using dropdowns and input fields — no code required.
+
+Each operation you add is executed in sequence, with the output of one operation feeding into the next. Reorder operations by dragging them in the pipeline list. The map preview updates in real time as you build, so you can immediately see which features your query returns.
+
+When you're satisfied with the result, save the query as a named view or export it directly to a new data source.
+
+## Supported Operations
+
+<CardGroup cols={2}>
+  <Card title="Filter by Attribute" icon="filter">
+    Reduce your dataset to features matching a condition on any attribute column. Combine multiple conditions with AND / OR logic.
+
+    **Examples:**
+    ```
+    status = "active"
+    population > 10000
+    status = "active" AND population > 10000
+    ```
+  </Card>
+  <Card title="Bounding Box" icon="vector-square">
+    Return only features whose geometry falls within a rectangular lat/lng bounding box. Useful for restricting large global datasets to a region of interest before applying heavier operations.
+  </Card>
+  <Card title="Intersect" icon="object-intersect">
+    Find features in **Layer A** that spatially overlap with one or more polygons from **Layer B**. Partial overlaps are included — use the **Contains** variant to require full containment.
+  </Card>
+  <Card title="Buffer" icon="circle-dashed">
+    Expand every feature in the layer outward by a fixed distance. Applies to points, lines, and polygons. Choose your distance unit: **meters**, **kilometers**, or **miles**.
+  </Card>
+  <Card title="Nearest Neighbor" icon="location-crosshairs">
+    For a given reference point, return the **N closest features** in the layer ranked by straight-line (great-circle) distance. Specify the maximum number of results and an optional maximum search radius.
+  </Card>
+  <Card title="Aggregate" icon="chart-column">
+    Group features by a containing polygon layer and compute statistics — **count**, **sum**, or **average** — on a numeric attribute. For example: sum total sales per sales territory, or count incident reports per district.
+  </Card>
+</CardGroup>
+
+## Running Queries via the API
+
+Every query you can build in the UI is also available through the REST API. Send a `POST` request to `/api/v1/data/query` with a JSON body that lists your source and the ordered array of operations.
+
+**Authentication:** Include your API key in the `Authorization` header as `Bearer <your-api-key>`.
+
+<CodeGroup>
+  ```bash cURL
+  curl -X POST https://app.geowebIW.com/api/v1/data/query \
+    -H "Authorization: Bearer <your-api-key>" \
+    -H "Content-Type: application/json" \
+    -d '{
+      "sourceId": "src_abc123",
+      "operations": [
+        {
+          "type": "filter",
+          "attribute": "status",
+          "operator": "==",
+          "value": "active"
+        },
+        {
+          "type": "buffer",
+          "distance": 500,
+          "unit": "meters"
+        }
+      ]
+    }'
+  ```
+
+  ```json Request Body
+  {
+    "sourceId": "src_abc123",
+    "operations": [
+      {
+        "type": "filter",
+        "attribute": "status",
+        "operator": "==",
+        "value": "active"
+      },
+      {
+        "type": "buffer",
+        "distance": 500,
+        "unit": "meters"
+      }
+    ]
+  }
+  ```
+
+  ```json Response
+  {
+    "type": "FeatureCollection",
+    "features": [...],
+    "meta": {
+      "featureCount": 42,
+      "executionMs": 218,
+      "sourceId": "src_abc123"
+    }
+  }
+  ```
+</CodeGroup>
+
+**Supported operation types for the API:**
+
+<ParamField body="type" type="string" required>
+  The operation to perform. One of: `filter`, `bbox`, `intersect`, `buffer`, `nearest`, `aggregate`.
+</ParamField>
+
+<ParamField body="sourceId" type="string" required>
+  The ID of the data source to query. Found on the data source detail page or returned by `GET /api/v1/data/sources`.
+</ParamField>
+
+<ParamField body="operations" type="array" required>
+  An ordered array of operation objects. Operations are applied sequentially — each receives the output of the previous step as its input.
+</ParamField>
+
+## Saving Query Results as a New Data Source
+
+Any query result — whether produced in the UI or via the API — can be saved as a standalone data source in your project:
+
+<Steps>
+  <Step title="Run your query">
+    Build and execute your query in the query builder until the feature preview shows the result set you want.
+  </Step>
+  <Step title="Click Save as Data Source">
+    In the query results panel, click **Save as Data Source**. Give the new source a name that describes the filtered or transformed dataset.
+  </Step>
+  <Step title="Choose update behavior">
+    Select **Static snapshot** to capture the current result as a fixed dataset, or **Dynamic (re-run on refresh)** to re-execute the query automatically whenever the underlying source updates.
+  </Step>
+  <Step title="Use the new source">
+    The saved data source appears in your project's Data Sources list and can be used in maps, workflows, and additional queries like any other source.
+  </Step>
+</Steps>
+
+<Tip>
+  **Performance tip:** Always place an **attribute filter** or **bounding box** operation as the first step in your pipeline to reduce the number of features before applying computationally intensive spatial operations like Intersect or Buffer. On sources with hundreds of thousands of features, this can reduce query time by an order of magnitude.
+</Tip>

@@ -1,0 +1,116 @@
+---
+title: "Workflow Actions: Automate Responses to Spatial Events"
+sidebarTitle: "Automation"
+description: "Configure actions in your workflows to send webhooks, update map layers, notify users, export data, and integrate with external services."
+---
+
+Actions are the steps that execute after a trigger fires and all conditions pass. Each action performs a discrete task — delivering a notification, writing data to a layer, calling an external API, or exporting a file — and actions chain together sequentially so you can coordinate complex multi-step processes from a single workflow. Configure as many actions as your workflow needs, in whatever order makes sense for your process.
+
+## Available Actions
+
+<CardGroup cols={2}>
+  <Card title="Send Webhook" icon="arrow-up-right-from-square">
+    POST a JSON payload to any HTTPS URL. Configure custom request headers and build the request body using `{{trigger.*}}` template variables. Use this action to push spatial events into any external system that accepts webhooks.
+  </Card>
+  <Card title="Send Email Notification" icon="envelope">
+    Send a formatted email to one or more workspace members. Customize the subject and body with trigger variables to include dynamic location or attribute data in every notification.
+  </Card>
+  <Card title="Update Feature Attribute" icon="pen-to-square">
+    Change one or more property values on matching features in a specified layer. Target features by ID from the trigger payload or by an attribute filter. Use this action to keep your map data synchronized with real-world state changes.
+  </Card>
+  <Card title="Add Feature to Layer" icon="map-pin">
+    Create a new point, line, or polygon feature in a target layer, populated with data from the trigger payload. Useful for logging events as spatial records — for example, writing each geofence entry as a timestamped point.
+  </Card>
+  <Card title="Export Layer Snapshot" icon="cloud-arrow-up">
+    Write a full GeoJSON snapshot of a layer to a connected cloud storage bucket. Supports **Amazon S3** and **Google Cloud Storage**. Configure the destination path using trigger variables to timestamp each export automatically.
+  </Card>
+  <Card title="Slack Notification" icon="slack">
+    Send a message to a Slack channel via a Slack incoming webhook URL. Build the message text with trigger variables to include feature names, coordinates, attribute values, and a direct link to the relevant map view.
+  </Card>
+</CardGroup>
+
+---
+
+## Using Trigger Variables in Action Payloads
+
+Trigger variables let you inject dynamic data from the trigger event into any text field in an action — webhook bodies, email subjects, Slack messages, attribute values, and file paths.
+
+Use double-curly-brace syntax: `{{trigger.<path>}}`
+
+### Common Variable Paths
+
+| Variable | Description |
+|---|---|
+| `{{trigger.lat}}` | Latitude from the trigger payload |
+| `{{trigger.lng}}` | Longitude from the trigger payload |
+| `{{trigger.feature.id}}` | ID of the feature that fired the trigger |
+| `{{trigger.feature.properties.name}}` | The `name` property of the triggering feature |
+| `{{trigger.feature.properties.status}}` | Any named attribute on the triggering feature |
+| `{{trigger.timestamp}}` | ISO 8601 timestamp of the trigger event |
+| `{{trigger.event}}` | The event type (e.g., `"enter"`, `"feature_updated"`) |
+
+For incoming webhook triggers, all keys in the POST body are available under `{{trigger.*}}`. For example, a body containing `{"asset_id": "truck_42"}` is accessible as `{{trigger.asset_id}}`.
+
+---
+
+## Webhook Action Payload Template
+
+The example below shows a fully templated **Send Webhook** action body. This payload is rendered at execution time with the actual trigger values before the request is dispatched.
+
+```json
+{
+  "event": "{{trigger.event}}",
+  "asset": {
+    "id": "{{trigger.feature.id}}",
+    "name": "{{trigger.feature.properties.name}}",
+    "location": {
+      "lat": {{trigger.lat}},
+      "lng": {{trigger.lng}}
+    }
+  },
+  "zone": "{{trigger.feature.properties.zone_name}}",
+  "occurred_at": "{{trigger.timestamp}}",
+  "severity": "{{trigger.feature.properties.priority}}"
+}
+```
+
+Configure the target URL and any required headers (such as `Authorization: Bearer <token>`) in the **Headers** section of the action panel.
+
+---
+
+## Action Chaining
+
+When a workflow contains multiple actions, they execute in the order they appear on the canvas — top to bottom. You control what happens when one action fails.
+
+<Tabs>
+  <Tab title="Continue on Failure">
+    The default behavior. If an action fails (for example, a webhook returns a 5xx error after all retries), the workflow moves on to the next action. Use this when later actions are independent of earlier ones.
+  </Tab>
+  <Tab title="Stop on Failure">
+    Select **Stop on failure** in the action's settings panel to halt the chain if that action fails. All subsequent actions are skipped and marked as `cancelled` in the execution log. Use this when later actions depend on the output of the current one.
+  </Tab>
+</Tabs>
+
+You can mix strategies within a single workflow — for example, make a critical data-write action stop the chain on failure, while a Slack notification at the end continues regardless.
+
+---
+
+## Execution Log
+
+The execution log records every workflow run with a full audit trail of each step.
+
+<Steps>
+  <Step title="Open the execution log">
+    From the workflow builder, click **Execution Log** in the top toolbar. From the Workflows list, click the three-dot menu next to any workflow and select **View Logs**.
+  </Step>
+  <Step title="Inspect a run">
+    Each log entry shows the run timestamp, the trigger type, the overall status (`success`, `partial`, `failed`), and the duration. Click any run to expand it and see the per-action detail: status, input, output, and error message (if applicable).
+  </Step>
+  <Step title="Retry a failed action">
+    On any failed action row, click **Retry** to re-execute that action in isolation using the original trigger data. Retrying a single action does not re-run preceding actions or increment your execution quota.
+  </Step>
+</Steps>
+
+<Note>
+  **Send Webhook** actions are automatically retried up to **3 times** with exponential backoff when the destination server returns a 5xx error. The retry schedule is approximately 30 seconds, 2 minutes, and 10 minutes after the initial failure. If all three retries fail, the action is marked `failed` in the execution log and a platform notification is sent to the workflow owner.
+</Note>

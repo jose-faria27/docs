@@ -1,0 +1,175 @@
+---
+title: "Style Map Layers with Attribute-Driven Rules"
+sidebarTitle: "Styling"
+description: "Control the visual appearance of your layers using fill color, stroke, opacity, icon, and data-driven style rules based on feature properties."
+---
+
+Styling transforms raw geometry into legible, meaningful visualization. In Geo Web IW, every layer has a set of basic style properties — color, opacity, stroke weight, icon — that you can set to a fixed value or drive dynamically from your data. Data-driven styling lets a single polygon layer communicate five categories of risk just by mapping attribute values to a color scale, no duplicate layers required.
+
+## Basic Style Properties
+
+Open the **Style** section in the Properties panel after selecting a layer. The available properties depend on the layer type (Point, Line, Polygon, etc.), but the full set is documented below.
+
+| Property | Applies To | Description |
+|---|---|---|
+| **Fill color** | Point, Polygon | The interior color of the geometry. Accepts a hex code, RGB value, or a data-driven rule. |
+| **Fill opacity** | Point, Polygon | Transparency of the fill, from `0` (invisible) to `1` (fully opaque). |
+| **Stroke color** | Point, Line, Polygon | The outline or border color. |
+| **Stroke width** | Point, Line, Polygon | The thickness of the stroke in pixels. |
+| **Stroke opacity** | Point, Line, Polygon | Transparency of the stroke, from `0` to `1`. |
+| **Point radius** | Point | The size of a circle marker in pixels. Can be fixed or data-driven. |
+| **Icon** | Point | A symbol from the Geo Web IW icon library or a custom uploaded PNG/SVG. |
+| **Label field** | Point, Line, Polygon | The data source field whose value is rendered as a text label next to each feature. |
+| **Font size** | Point, Line, Polygon | Size of the label text in pixels. |
+
+<Note>
+  Line layers use **Stroke color**, **Stroke width**, and **Stroke opacity** but do not have fill properties. Heatmap and Cluster layers have their own dedicated color ramp and radius settings accessible in the same Style section.
+</Note>
+
+---
+
+## Data-Driven Styling
+
+Data-driven styling maps a data property to a visual channel — color, size, or opacity — so the map itself communicates the data without a separate chart or table.
+
+### Categorical (qualitative) color
+
+Use categorical coloring when your attribute contains discrete text or numeric codes.
+
+<Steps>
+  <Step title="Open Fill color and switch to Data-driven">
+    In the Style section, click the color swatch next to **Fill color**. Select **Data-driven** from the color mode tabs.
+  </Step>
+
+  <Step title="Choose the attribute field">
+    Pick the property field from your data source. For example: `risk_level`.
+  </Step>
+
+  <Step title="Set colors per category">
+    Geo Web IW lists each unique value found in the field. Assign a color to each value:
+
+    | Value | Color |
+    |---|---|
+    | `low` | `#4ade80` (green) |
+    | `medium` | `#facc15` (yellow) |
+    | `high` | `#f87171` (red) |
+
+    Click **Other values** at the bottom to set a fallback color for values not explicitly listed.
+  </Step>
+</Steps>
+
+### Continuous (graduated) color
+
+Use graduated coloring when your attribute is a numeric range and you want a smooth or stepped color progression.
+
+<Steps>
+  <Step title="Switch to Graduated">
+    In the Data-driven color panel, select the **Graduated** tab.
+  </Step>
+
+  <Step title="Choose the attribute field and scale">
+    Select the numeric field (for example, `avg_temp`) and choose a color scale from the palette library. Geo Web IW provides sequential, diverging, and colorblind-friendly palettes.
+  </Step>
+
+  <Step title="Define stops">
+    Add two or more stops to define the breakpoints of your scale. For a 3-stop example on `risk_level` scored 0–100:
+
+    | Stop value | Color |
+    |---|---|
+    | `0` | `#4ade80` |
+    | `50` | `#facc15` |
+    | `100` | `#f87171` |
+
+    Values between stops are interpolated linearly by default. Switch to **Step** interpolation to create hard category breaks.
+  </Step>
+</Steps>
+
+---
+
+## Expression-Based Rules
+
+For logic that goes beyond simple value matching, write a style expression using Geo Web IW's expression language, which follows the [MapLibre expression syntax](https://maplibre.org/maplibre-style-spec/expressions/).
+
+Use the **Expression editor** by clicking **{ }** next to any style property in the Properties panel.
+
+### Example: Show only active features in blue
+
+```json
+["case",
+  ["==", ["get", "status"], "active"], "#3b82f6",
+  "#d1d5db"
+]
+```
+
+This expression returns `#3b82f6` (blue) when the feature's `status` property equals `"active"`, and `#d1d5db` (gray) for everything else.
+
+### Example: Scale point radius by population
+
+```json
+["interpolate",
+  ["linear"],
+  ["get", "population"],
+  0,    4,
+  10000, 12,
+  100000, 28
+]
+```
+
+This scales the point radius from `4px` at population `0` up to `28px` at population `100,000`.
+
+### Full styling JSON reference
+
+You can view and edit the raw style configuration for any layer by clicking **View JSON** at the bottom of the Style section. This is useful for copying styles between layers or pasting configurations generated externally.
+
+```json
+{
+  "type": "fill",
+  "paint": {
+    "fill-color": [
+      "step",
+      ["get", "risk_level"],
+      "#4ade80",
+      33, "#facc15",
+      66, "#f87171"
+    ],
+    "fill-opacity": 0.75,
+    "fill-outline-color": "#ffffff"
+  }
+}
+```
+
+<Info>
+  The **View JSON** editor validates your configuration in real time. Syntax errors are highlighted inline and the map will not apply an invalid style.
+</Info>
+
+---
+
+## Saving and Reusing Styles
+
+Once you have configured a style you want to apply to other layers, save it as a named **style preset**.
+
+<Steps>
+  <Step title="Open the preset menu">
+    In the Style section, click the **⋯** overflow menu at the top right and select **Save as preset**.
+  </Step>
+
+  <Step title="Name the preset">
+    Give the preset a descriptive name like *Risk Choropleth – 3-Stop Red/Yellow/Green* so it is easy to find later.
+  </Step>
+
+  <Step title="Apply the preset to another layer">
+    Select the target layer, open the Style section, click **Load preset**, and choose the saved preset from the list. All style properties are applied immediately. You can then adjust individual values without affecting the saved preset.
+  </Step>
+</Steps>
+
+<Warning>
+  Style presets store the style configuration only — not the data-driven field bindings. After applying a preset to a new layer, verify that the **field** selected for each data-driven rule matches a field that exists in the new layer's data source.
+</Warning>
+
+---
+
+## Accessibility and Color Choice
+
+<Tip>
+  Approximately 8% of men and 0.5% of women have some form of color vision deficiency. When choosing a color scale for choropleth or categorical maps, use Geo Web IW's built-in **Colorblind-safe** palette filter in the color scale picker. The **Cividis**, **Viridis**, and **OKabe-Ito** palettes are safe for the most common types of color blindness and remain distinguishable when printed in grayscale. Avoid red–green scales (like the default traffic-light palette) for any map intended for a general audience.
+</Tip>

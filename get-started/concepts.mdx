@@ -1,0 +1,127 @@
+---
+title: "Core Concepts in Geo Web IW"
+sidebarTitle: "Core Concepts"
+description: "Understand the key building blocks of Geo Web IW: projects, maps, layers, data sources, workflows, and how they work together."
+---
+
+Every feature in Geo Web IW is built on a small set of interlocking concepts. Understanding how these building blocks relate to each other makes it much easier to structure your work, troubleshoot unexpected behavior, and design scalable spatial applications. This page defines each concept and shows how they connect into a coherent system.
+
+## The conceptual model
+
+<Info>
+  **How everything fits together:**
+
+  A **Project** is the top-level container. Inside a project you build **Maps** and design **Workflows**. Each Map is assembled from one or more **Layers**, and each Layer draws its geometry and attributes from a **Data Source**. Workflows are driven by **Triggers** and carry out **Actions** — often reading from or writing to those same Data Sources.
+
+  ```
+  Project
+  ├── Maps
+  │   └── Layers  ──→  Data Sources
+  └── Workflows
+      ├── Triggers
+      └── Actions  ──→  Data Sources / External Services
+  ```
+</Info>
+
+## Building blocks
+
+<CardGroup cols={2}>
+  <Card title="Project" icon="folder-open">
+    The top-level container in Geo Web IW. A project holds all the maps, data sources, and workflows that belong to a single initiative, team, or client engagement. Permissions set at the project level cascade to everything inside it.
+  </Card>
+  <Card title="Map" icon="map">
+    An interactive visualization composed of one or more layers arranged in a stack. Every map has a **basemap** (the background tile layer) and a **viewport** (the initial center coordinate and zoom level shown when the map loads).
+  </Card>
+  <Card title="Layer" icon="layer-group">
+    A visual representation of a data source rendered on a map. Layers can be **vector** (points, lines, or polygons) or **raster** (imagery, elevation grids, heat maps). Each layer has its own style rules, visibility toggle, and opacity setting.
+  </Card>
+  <Card title="Data Source" icon="database">
+    A dataset connected to the platform. Data sources can be an **uploaded file** (GeoJSON, Shapefile, CSV), an **external API** (WMS, WFS, ArcGIS REST), or a **live feed** (MQTT stream, IoT sensor endpoint). Multiple layers in multiple maps can reference the same data source.
+  </Card>
+  <Card title="Workflow" icon="bolt">
+    An automated process that listens for a spatial or temporal trigger and executes one or more actions in response. Workflows replace manual, repetitive spatial operations with reliable, event-driven logic you configure once.
+  </Card>
+  <Card title="Trigger" icon="bell">
+    The event that starts a workflow. Geo Web IW supports four trigger types: a **geofence crossing** (an asset enters or exits a polygon), a **schedule** (cron or interval), an incoming **webhook**, or a **data change** (a dataset is updated or a threshold is crossed).
+  </Card>
+  <Card title="Action" icon="play">
+    What a workflow does when its trigger fires. Actions include sending an outbound **webhook**, **updating a data source** (appending a row, changing an attribute), **notifying a user** (email or in-app alert), or chaining into another workflow.
+  </Card>
+</CardGroup>
+
+## Concept details
+
+### Project
+
+Projects give you a clean boundary around related work. Create one project per client, region, or use case. All data sources, maps, and workflows inside a project share the same team membership and billing quota. You can export a project as a portable archive or duplicate it to use as a template.
+
+### Map
+
+Maps are the primary deliverable in Geo Web IW. You can embed a published map in an external website using the provided `<iframe>` snippet, share it via a public URL, or restrict it to signed-in workspace members. The viewport — the default center and zoom — is saved with the map so every viewer sees a consistent opening view.
+
+### Layer
+
+Layer order matters: layers higher in the stack are rendered on top. Drag layers in the Layers panel to reorder them. Each layer can have **filter rules** that show only the features matching a property condition, and **popup templates** that define what appears when a user clicks a feature.
+
+<Accordion title="Vector vs. raster layers">
+  **Vector layers** store geometry as coordinates and render it at any zoom level without pixelation. They support data-driven styling, feature selection, and attribute queries. Use vector layers for boundaries, routes, points of interest, and any data that users need to interact with.
+
+  **Raster layers** are pre-rendered grids of pixels — satellite imagery, scanned maps, interpolated surfaces. They render quickly over large areas but do not support feature-level interaction. Use raster layers as contextual backdrops or for continuous phenomena like elevation or temperature.
+</Accordion>
+
+### Data Source
+
+A data source is defined once and can be reused across many layers and many maps. When you update the underlying data (by re-uploading a file or refreshing an API connection), every layer that references that source reflects the change automatically. Live feed sources update in real time and push changes to connected map layers without requiring a page refresh.
+
+### Workflow
+
+Workflows use a visual trigger → action editor. You do not need to write code — configure each step using the form controls, test the workflow with a simulated event, and activate it. Workflow run logs are retained for 30 days so you can audit exactly when a trigger fired and whether each action succeeded.
+
+### Trigger
+
+<Tabs>
+  <Tab title="Geofence">
+    Draw or import a polygon to define the geofence boundary. Choose whether the workflow fires on **entry**, **exit**, or **both**. The platform evaluates moving asset positions against the boundary in real time as location updates arrive.
+  </Tab>
+  <Tab title="Schedule">
+    Use a human-readable interval (`every 1 hour`, `daily at 08:00 UTC`) or a cron expression for precise control. Scheduled triggers are useful for batch processing, periodic data refreshes, and recurring reports.
+
+    ```
+    # Example cron: run at 6 AM every weekday
+    0 6 * * 1-5
+    ```
+  </Tab>
+  <Tab title="Webhook">
+    Geo Web IW generates a unique inbound URL for each webhook trigger. POST a JSON payload to that URL from any external system to start the workflow. The payload is available as variables inside subsequent action steps.
+  </Tab>
+  <Tab title="Data Change">
+    Watch a specific data source for row additions, attribute updates, or threshold crossings (e.g., a numeric field exceeds a set value). Ideal for alerting workflows that monitor sensor readings or crowdsourced data submissions.
+  </Tab>
+</Tabs>
+
+### Action
+
+Actions are executed in sequence. If an action fails, the workflow stops and logs an error — subsequent actions do not run. You can add a **retry policy** (up to three attempts with exponential back-off) to any action that calls an external service.
+
+## How the concepts connect
+
+The diagram below traces a real-world scenario — monitoring delivery vehicles entering a restricted zone:
+
+```
+Project: "Logistics Operations"
+│
+├── Data Source: "Vehicle GPS Feed"  (live MQTT stream)
+│
+├── Map: "Fleet Overview"
+│   └── Layer: "Vehicle Positions"  ──→  Data Source: "Vehicle GPS Feed"
+│
+└── Workflow: "Restricted Zone Alert"
+    ├── Trigger: Geofence crossing  ──→  Data Source: "Vehicle GPS Feed"
+    └── Action: Send webhook to dispatch system
+```
+
+This pattern — one data source powering both a live map layer and a workflow trigger — is the most common architecture in Geo Web IW. It keeps your data canonical in one place while letting visualization and automation consume it independently.
+
+<Tip>
+  Ready to put these concepts into practice? Follow the [Quickstart guide](/quickstart) to create your first project, import a dataset, build a map, and publish it — all in under five minutes.
+</Tip>

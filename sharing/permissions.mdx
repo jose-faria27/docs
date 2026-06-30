@@ -1,0 +1,111 @@
+---
+title: "Manage Team Access and Permissions in Geo Web IW"
+sidebarTitle: "Permissions"
+description: "Control who can view, edit, and administer your Geo Web IW projects using role-based access controls for team members and external collaborators."
+---
+
+Geo Web IW uses a role-based access control model to keep your spatial data and workflows in the right hands. Every workspace member is assigned a role that determines what they can see and do — from managing billing and inviting colleagues to editing maps and consuming the API. You can also extend view-only access to external collaborators without requiring them to join your workspace.
+
+---
+
+## Roles and Permissions
+
+The table below summarises what each role can do. Roles are cumulative — Admins can do everything Editors can, and so on upward.
+
+| Permission | Owner | Admin | Editor | Viewer |
+|---|:---:|:---:|:---:|:---:|
+| Invite members | ✅ | ✅ | ❌ | ❌ |
+| Manage billing | ✅ | ❌ | ❌ | ❌ |
+| Create / delete projects | ✅ | ✅ | ✅ | ❌ |
+| Edit maps & workflows | ✅ | ✅ | ✅ | ❌ |
+| View published maps | ✅ | ✅ | ✅ | ✅ |
+| Access API keys | ✅ | ✅ | ❌ | ❌ |
+
+<Note>
+  The **Owner** role is unique — there can only be one Owner per workspace and it cannot be removed or demoted. To transfer ownership, go to **Settings → Workspace → Transfer Ownership** and nominate another Admin. The transfer takes effect immediately and your role changes to Admin.
+</Note>
+
+---
+
+## Inviting Team Members
+
+<Steps>
+  <Step title="Open workspace settings">
+    Click your workspace name in the top-left navigation, then select **Settings**.
+  </Step>
+  <Step title="Go to the Members tab">
+    Select the **Members** tab in the left-hand settings sidebar.
+  </Step>
+  <Step title="Click Invite">
+    Click the **Invite Members** button in the top-right of the Members page.
+  </Step>
+  <Step title="Enter the invitee's email and select a role">
+    Type the email address of the person you want to invite, then choose their role from the dropdown — Admin, Editor, or Viewer. You can invite multiple people at once by entering comma-separated email addresses.
+  </Step>
+  <Step title="Send the invitation">
+    Click **Send Invite**. The invitee receives an email with an acceptance link that expires in 7 days.
+
+    - If they already have a Geo Web IW account, accepting the invite adds them to your workspace immediately.
+    - If they don't have an account, they're prompted to create one before joining.
+  </Step>
+</Steps>
+
+<Tip>
+  You can resend or revoke a pending invitation from **Settings → Members → Pending Invites** at any time before the recipient accepts.
+</Tip>
+
+---
+
+## Workspace-Level vs. Project-Level Permissions
+
+<Tabs>
+  <Tab title="Workspace-level">
+    Roles assigned in **Settings → Members** apply across your entire workspace. An Editor, for example, can edit every project in the workspace by default.
+
+    This is the simplest model for small teams where every member needs consistent access to all projects.
+  </Tab>
+  <Tab title="Project-level overrides">
+    If you need finer control, you can override a member's role for a specific project without changing their workspace-wide role.
+
+    To set a project-level override:
+
+    1. Open the project you want to restrict or elevate access for.
+    2. Click **Share** in the top-right toolbar.
+    3. Find the team member in the **People with access** list and change their role using the dropdown.
+
+    A project-level role takes precedence over the workspace role for that project only. For example, a workspace-level Editor could be downgraded to Viewer on a sensitive project, or a workspace Viewer could be given Editor access on a single exploratory project.
+  </Tab>
+</Tabs>
+
+---
+
+## External Collaborators
+
+You can share a project with someone outside your workspace — a client, contractor, or stakeholder — without asking them to create an account or join your workspace.
+
+External collaborators receive **view-only** access via a magic link:
+
+1. Open the project you want to share.
+2. Click **Share → Invite External Collaborator**.
+3. Enter the collaborator's email address.
+4. Click **Send Magic Link**.
+
+The recipient receives a time-limited link (valid for 30 days by default) that grants read-only access to that project. They can view maps and exported data but cannot edit, publish, or access workspace settings.
+
+<Info>
+  External collaborator access is scoped to a single project. If you want to give someone access to multiple projects, either invite them as a workspace member or generate separate magic links for each project.
+</Info>
+
+---
+
+## Revoking Access
+
+To remove a team member's access to your workspace:
+
+1. Go to **Settings → Members**.
+2. Find the member in the list and click the **⋯** menu next to their name.
+3. Select **Remove from Workspace**.
+
+Removal is immediate — any active sessions the member has open are invalidated and they are redirected to the Geo Web IW login page. Their past contributions (maps, comments, edits) remain in the workspace and are attributed to their name.
+
+To revoke an external collaborator's magic link, open the project's **Share** panel, find their entry under **External Collaborators**, and click **Revoke Link**.

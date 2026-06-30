@@ -1,0 +1,153 @@
+---
+title: "Supported Geospatial File Formats in Geo Web IW"
+sidebarTitle: "Formats"
+description: "Detailed reference for every file format Geo Web IW can import and export: GeoJSON, Shapefile, CSV, KML, GeoTIFF, and more."
+---
+
+Geo Web IW supports a broad range of geospatial file formats to meet you wherever your data lives. Whether you're working with lightweight point datasets in CSV, complex polygon layers in Shapefiles, or raster imagery in GeoTIFF, this reference page covers every format's requirements, limitations, and any automatic transformations Geo Web IW applies on import.
+
+## Format Reference
+
+<Tabs>
+  <Tab title="GeoJSON">
+    GeoJSON is the recommended format for importing and exporting vector data in Geo Web IW. It is a widely supported open standard and preserves all geometry types without requiring a proprietary viewer.
+
+    **Key details:**
+    - Supports points, linestrings, polygons, and their multi-part equivalents
+    - Coordinates **must** be in WGS84 (EPSG:4326) — longitude first, then latitude
+    - Maximum file size: **500 MB**
+    - Feature properties become searchable attributes in the layer
+
+    **Minimal GeoJSON example:**
+
+    ```json
+    {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "geometry": {
+            "type": "Point",
+            "coordinates": [-122.4194, 37.7749]
+          },
+          "properties": {
+            "name": "San Francisco",
+            "population": 874961
+          }
+        }
+      ]
+    }
+    ```
+
+    <Tip>
+      Always validate your GeoJSON with a tool like [geojson.io](https://geojson.io) before importing. Malformed feature collections are the most common cause of import failures.
+    </Tip>
+  </Tab>
+
+  <Tab title="Shapefile">
+    Shapefiles are an industry-standard ESRI format and are widely exported by GIS tools such as ArcGIS, QGIS, and government data portals.
+
+    **Key details:**
+    - Upload a single `.zip` archive — loose `.shp` files are not accepted
+    - The archive must contain at minimum: `.shp`, `.dbf`, `.prj`, and `.shx`
+    - Projections are **automatically re-projected** to WGS84 (EPSG:4326) on import
+    - Maximum file size: **500 MB** (compressed)
+    - Attribute field names are limited to 10 characters by the Shapefile specification
+
+    **Required archive contents:**
+
+    | File | Purpose |
+    | --- | --- |
+    | `.shp` | Geometry data |
+    | `.dbf` | Attribute table |
+    | `.prj` | Coordinate reference system definition |
+    | `.shx` | Shape index |
+    | `.cpg` *(optional)* | Character encoding declaration |
+
+    <Warning>
+      If your `.zip` does not include a `.prj` file, Geo Web IW assumes WGS84. Import the file only if you are certain of the source projection — incorrect reprojection will misplace your features on the map.
+    </Warning>
+  </Tab>
+
+  <Tab title="CSV">
+    CSV is the simplest format for importing point data with associated attributes. Geo Web IW treats each row as a point feature.
+
+    **Key details:**
+    - Must include at least two columns for spatial positioning: one for latitude, one for longitude
+    - Column names are configurable during import — defaults are `lat`/`lng`, `latitude`/`longitude`
+    - WGS84 (EPSG:4326) is assumed — decimal degrees required
+    - All other columns become feature properties
+    - Maximum file size: **500 MB**
+    - Headers must be present in the first row
+
+    **Sample CSV:**
+
+    ```csv
+    name,latitude,longitude,status,capacity
+    "Warehouse A",37.7749,-122.4194,active,1200
+    "Warehouse B",34.0522,-118.2437,inactive,850
+    "Warehouse C",40.7128,-74.0060,active,2100
+    ```
+
+    <Note>
+      CSV import creates **point** geometries only. To import line or polygon data from a tabular format, convert your CSV to GeoJSON first using a tool like QGIS or the Geo Web IW API.
+    </Note>
+  </Tab>
+
+  <Tab title="KML / KMZ">
+    KML (Keyhole Markup Language) is the format used and popularized by Google Earth. KMZ is simply a compressed (zipped) KML file.
+
+    **Key details:**
+    - Supports points, lines, and polygons
+    - KMZ archives are **automatically decompressed** to KML during import — no manual extraction needed
+    - Styles and icon references embedded in the KML are ignored; apply styling via the Geo Web IW style editor after import
+    - Placemark names and description fields are preserved as feature properties
+    - Maximum file size: **500 MB** (uncompressed KML)
+
+    **Supported geometry types:**
+
+    | KML Element | Geo Web IW Geometry |
+    | --- | --- |
+    | `<Point>` | Point |
+    | `<LineString>` | LineString |
+    | `<Polygon>` | Polygon |
+    | `<MultiGeometry>` | GeometryCollection |
+
+    <Info>
+      KML files that use `<NetworkLink>` elements to reference remote resources are not supported. Flatten all features into a single file before importing.
+    </Info>
+  </Tab>
+
+  <Tab title="GeoTIFF">
+    GeoTIFF is the standard format for raster data — satellite imagery, elevation models, heatmaps, and other grid-based datasets.
+
+    **Key details:**
+    - Supports single-band and multi-band rasters
+    - Maximum file size: **1 GB**
+    - Automatically converted to web-optimized map tiles after import for fast rendering at all zoom levels
+    - Embedded CRS metadata is respected; rasters without CRS metadata are assumed to be WGS84
+    - Supports 8-bit, 16-bit, and 32-bit pixel depth
+
+    **Band rendering defaults:**
+
+    | Bands | Default Rendering |
+    | --- | --- |
+    | 1 band | Grayscale |
+    | 3 bands | RGB composite |
+    | 4 bands | RGBA composite |
+
+    <Tip>
+      For large rasters (over 200 MB), pre-process your GeoTIFF into a Cloud-Optimized GeoTIFF (COG) before uploading. COGs tile more efficiently and reduce initial processing time significantly.
+    </Tip>
+  </Tab>
+</Tabs>
+
+## Coordinate Systems
+
+Geo Web IW works internally with **EPSG:4326 (WGS84)** — geographic coordinates in decimal degrees. Every imported file is re-projected to EPSG:4326 automatically, regardless of the source projection.
+
+When exporting, files default to EPSG:4326. If you need a different output projection — for example, a national grid CRS or a UTM zone — select the target CRS from the **Coordinate Reference System** dropdown on the export dialog.
+
+<Note>
+  **3D geometries** (features with Z coordinate values) are fully supported and preserved in the data model. However, Geo Web IW currently renders all features in 2D — Z values are stored but not visualized on the map. Use the attribute table or API to access Z values programmatically.
+</Note>

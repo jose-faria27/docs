@@ -1,47 +1,104 @@
 ---
-title: "Quickstart"
-description: "Begin with a guide on the fastest path to a successful outcome"
+title: "Get Started with Geo Web IW in 5 Minutes"
+sidebarTitle: "Quickstart"
+description: "Learn how to create your first interactive map, import geospatial data, and share it with your team using Geo Web IW."
 ---
 
-Describe how someone begins using your product. What is the first thing they need to do? Are there any prerequisites?
-
-A quickstart should take someone from zero to using your product. They'll get a quick win and a sense of what they can accomplish.
+This guide walks you through everything you need to go from a blank canvas to a published, shareable map. By the end, you will have imported a real dataset, styled it on an interactive map, and sent a live link to a colleague — all in under five minutes.
 
 ## Prerequisites
 
-Before you begin, you must have:
+Before you begin, make sure you have:
 
-- Requirement one (for example, Node.js 18+, a free account, an API key)
-- Requirement two (for example, a compatible device, a compatible browser, a compatible operating system)
-
-## Get started
-
-<Steps>
-  <Step title="Install">
-    Describe how to install your product or sign up.
-
-    ```bash
-    npm install your-package
-    ```
-  </Step>
-  <Step title="Configure">
-    Describe any setup or configuration needed before first use.
-
-    ```bash
-    your-cli init
-    ```
-  </Step>
-  <Step title="Run it">
-    Show the first thing a user does to see it working.
-
-    ```bash
-    your-cli start
-    ```
-  </Step>
-</Steps>
+- A free Geo Web IW account — sign up at [app.geowebhq.com](https://app.geowebhq.com)
+- A modern web browser (Chrome, Firefox, Edge, or Safari)
 
 <Tip>
-  Give people a way to get help. This could be a link to a support page, a chat with a customer support agent, or a forum for your product.
-
-  Example: Need help? Reach out to us at [support@yourcompany.com](mailto:support@yourcompany.com).
+  Every new account includes a **14-day free trial** of the Pro plan. No credit card is required. You get full access to advanced styling, workflow automation, and team collaboration features during the trial period.
 </Tip>
+
+## Steps
+
+<Steps>
+  ### Sign up and log in
+
+  Navigate to [app.geowebhq.com](https://app.geowebhq.com) and click **Get Started Free**. Enter your email address and choose a password, then open the verification email and click **Confirm Email**. You will be redirected to your new workspace dashboard.
+
+  If your organization already has a workspace, ask your Admin to send you an invitation link instead of creating a new account.
+
+  ### Create a new project
+
+  From the dashboard, click **New Project** in the top-right corner. Give your project a descriptive name — for example, `My First Spatial Project` — then click **Create**. Projects are the top-level containers that hold your maps, data sources, and automated workflows.
+
+  ### Import a dataset
+
+  Inside your new project, open the **Data** tab and click **Import Dataset**. Geo Web IW accepts the following formats:
+
+  <Tabs>
+    <Tab title="GeoJSON">
+      Select **GeoJSON** as the file type and drag your `.geojson` file into the upload area. The platform automatically detects the coordinate reference system (CRS) and feature properties.
+
+      ```json
+      {
+        "type": "FeatureCollection",
+        "features": [
+          {
+            "type": "Feature",
+            "geometry": { "type": "Point", "coordinates": [-73.985, 40.748] },
+            "properties": { "name": "Empire State Building", "category": "landmark" }
+          }
+        ]
+      }
+      ```
+    </Tab>
+    <Tab title="CSV with lat/lon">
+      Select **CSV** and upload your file. Map the **latitude** and **longitude** columns using the column-picker dropdowns that appear. Any remaining columns become queryable feature properties.
+
+      ```csv
+      name,latitude,longitude,category
+      Empire State Building,40.748,-73.985,landmark
+      Central Park,40.785,-73.968,park
+      ```
+    </Tab>
+    <Tab title="Shapefile">
+      Compress your shapefile components (`.shp`, `.dbf`, `.shx`, and optionally `.prj`) into a single `.zip` archive before uploading. Select **Shapefile** as the file type and drag the archive into the upload area.
+    </Tab>
+  </Tabs>
+
+  Click **Upload** and wait for the green **Ready** status badge to appear next to your dataset.
+
+  ### Create a map and add your first layer
+
+  Go to the **Maps** tab and click **New Map**. Name the map, then click **Add Layer** in the Layers panel on the left. Choose **From Data Source**, select the dataset you just imported, and click **Add to Map**. Your data points, lines, or polygons will appear on the canvas immediately.
+
+  <Note>
+    If your data does not appear after adding the layer, click the **Zoom to Layer** button (the crosshair icon) in the Layers panel to center the viewport on your dataset's bounding box.
+  </Note>
+
+  ### Style the layer
+
+  Click the layer name in the Layers panel to open the **Style** pane. Use the controls to customize how your data looks:
+
+  - **Color by attribute** — under **Fill Color**, switch from **Static** to **Data-driven** and choose a property from your dataset (e.g., `category`). Assign a color to each value or use an auto-generated palette.
+  - **Opacity** — drag the **Layer Opacity** slider to adjust transparency. A value between `0.7` and `0.9` works well for polygon layers overlaid on a basemap.
+  - **Stroke** — enable **Outline** and set a contrasting color to make boundaries stand out.
+
+  Click **Apply** to preview your changes on the map canvas in real time.
+
+  ### Publish and share the map URL
+
+  When you are happy with the styling, click **Publish** in the top toolbar. Toggle **Public link** to **On**, then copy the generated URL from the **Share** dialog. Anyone with the link can view the interactive map in their browser — no account required.
+
+  To restrict access to your team only, leave the link set to **Private** and share it from the **Invite** tab instead.
+</Steps>
+
+## What to explore next
+
+<CardGroup cols={2}>
+  <Card title="Maps Overview" icon="map" href="/maps/overview">
+    Learn about basemaps, viewports, layer ordering, popups, and advanced cartographic controls.
+  </Card>
+  <Card title="Workflows Overview" icon="bolt" href="/workflows/overview">
+    Automate spatial processes with geofence triggers, scheduled tasks, and webhook actions.
+  </Card>
+</CardGroup>

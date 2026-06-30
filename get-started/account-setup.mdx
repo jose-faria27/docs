@@ -1,0 +1,115 @@
+---
+title: "Set Up Your Geo Web IW Account and Workspace"
+sidebarTitle: "Account Setup"
+description: "Create your Geo Web IW account, configure your workspace settings, invite team members, and generate your first API key."
+---
+
+Before you start building maps and automating spatial workflows, you need a properly configured workspace. This page covers account creation, workspace preferences, team access control, and API key management — the foundational steps that keep your projects organized and secure.
+
+## Creating your account
+
+Sign up at [app.geowebhq.com](https://app.geowebhq.com) by clicking **Get Started Free** and filling in your name, email address, and a strong password. After submitting the form, Geo Web IW sends a verification email to the address you provided.
+
+<Steps>
+  ### Verify your email
+
+  Open the verification email from `no-reply@geowebhq.com` and click **Confirm Email**. The link expires after **24 hours** — request a new one from the login page if needed.
+
+  ### Complete your profile
+
+  On first login you are prompted to set a display name and choose your industry. This information helps Geo Web IW surface relevant templates and sample datasets. Both fields can be changed later in **Settings → Profile**.
+
+  ### Name your workspace
+
+  Every account starts with a personal workspace. Enter a workspace name that reflects your organization or project context (e.g., `Acme Corp Geospatial`). This name appears in shared map URLs and notification emails sent to collaborators.
+</Steps>
+
+<Note>
+  If your company uses SSO (SAML 2.0 or OIDC), contact [support@geowebhq.com](mailto:support@geowebhq.com) to enable identity-provider login before inviting your team.
+</Note>
+
+## Workspace settings
+
+Open **Settings → Workspace** from the left sidebar to configure the defaults that apply to every new map and project you create.
+
+| Setting | Description | Default |
+|---|---|---|
+| **Workspace name** | Displayed in the dashboard header and shared URLs | Set during signup |
+| **Default map projection** | CRS used when rendering new maps (e.g., EPSG:4326, EPSG:3857) | Web Mercator (EPSG:3857) |
+| **Default basemap** | Background tile layer shown on new maps | OpenStreetMap Standard |
+| **Data storage region** | Cloud region where uploaded datasets are stored | US East |
+
+<Tip>
+  If most of your data uses a national grid (e.g., British National Grid EPSG:27700 or UTM zones), set the **Default map projection** to match. Geo Web IW reprojects layers on the fly, but matching projections reduces rendering latency for large datasets.
+</Tip>
+
+## Inviting team members
+
+Navigate to **Settings → Team** and click **Invite Member**. Enter the invitee's email address and select a role, then click **Send Invite**. Invitees receive an email with a join link valid for **7 days**.
+
+### Roles and permissions
+
+Each role grants a specific set of permissions across the workspace:
+
+| Permission | Owner | Admin | Editor | Viewer |
+|---|:---:|:---:|:---:|:---:|
+| View maps and data | ✅ | ✅ | ✅ | ✅ |
+| Comment on maps | ✅ | ✅ | ✅ | ✅ |
+| Create and edit maps | ✅ | ✅ | ✅ | ❌ |
+| Import and manage datasets | ✅ | ✅ | ✅ | ❌ |
+| Build and run workflows | ✅ | ✅ | ✅ | ❌ |
+| Invite and remove members | ✅ | ✅ | ❌ | ❌ |
+| Manage workspace settings | ✅ | ✅ | ❌ | ❌ |
+| Manage billing | ✅ | ❌ | ❌ | ❌ |
+| Transfer or delete workspace | ✅ | ❌ | ❌ | ❌ |
+
+<Info>
+  Each workspace has exactly one **Owner**. To transfer ownership, go to **Settings → Team**, click the current Owner's name, and select **Transfer Ownership**. The outgoing Owner is automatically downgraded to Admin.
+</Info>
+
+## Generating an API key
+
+API keys let you authenticate programmatic requests to the Geo Web IW REST API — for example, uploading datasets from a pipeline or querying layer data in a third-party application.
+
+<Steps>
+  ### Open API Keys settings
+
+  Go to **Settings → API Keys** in the left sidebar.
+
+  ### Create a new key
+
+  Click **New Key**. Enter a descriptive label (e.g., `CI Pipeline – Production`) so you can identify the key's purpose later. Optionally, set an expiry date for keys used in short-lived contexts.
+
+  ### Copy the key
+
+  After clicking **Create**, your new API key is displayed **once** in a highlighted box. Click **Copy to clipboard** immediately.
+
+  ```bash
+  # Example: authenticate a dataset upload request
+  curl -X POST https://api.geowebhq.com/v1/datasets \
+    -H "Authorization: Bearer YOUR_API_KEY" \
+    -H "Content-Type: application/json" \
+    -d '{"name": "City Boundaries", "format": "geojson"}'
+  ```
+
+  ### Store the key securely
+
+  Paste the key into your secrets manager, CI environment variables, or `.env` file immediately. Once you close the dialog, Geo Web IW only shows the key's label and last-four characters — the full value cannot be retrieved again.
+</Steps>
+
+<Warning>
+  Never commit API keys to source control or expose them in client-side code. If a key is compromised, revoke it immediately from **Settings → API Keys** by clicking the trash icon next to the affected key.
+</Warning>
+
+### Rotating API keys
+
+<Accordion title="How to rotate a key without downtime">
+  To rotate a key with zero downtime:
+
+  1. Generate a **new key** using the steps above.
+  2. Update your application or pipeline to use the new key.
+  3. Verify that requests succeed with the new key.
+  4. Return to **Settings → API Keys** and revoke the old key by clicking **Delete**.
+
+  We recommend rotating API keys every **90 days** as a security best practice, or immediately after any personnel change that involved access to the key.
+</Accordion>

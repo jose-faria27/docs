@@ -1,0 +1,174 @@
+---
+title: "Workflow Triggers: Spatial Events and Schedules"
+sidebarTitle: "Triggers"
+description: "Configure triggers that start your Geo Web IW workflows: geofence events, schedule (cron), layer data changes, and incoming webhooks."
+---
+
+A trigger is the starting point of every workflow — it defines the event that causes your workflow to run. Geo Web IW supports four trigger types: geofence events, schedules, layer data changes, and incoming webhooks. Choose the trigger that matches the real-world signal you want to act on, configure its parameters, and the platform handles all the detection and delivery automatically.
+
+## Geofence Trigger
+
+The geofence trigger fires when a moving entity — a vehicle, asset, or any tracked point — crosses the boundary of a polygon zone you define.
+
+### Event Types
+
+| Event | When it fires |
+|---|---|
+| **Enter** | The entity moves from outside the zone to inside |
+| **Exit** | The entity moves from inside the zone to outside |
+| **Both** | Either crossing direction fires the workflow |
+
+### Configure the Zone
+
+Define the polygon zone using one of two methods:
+
+- **Draw a polygon** — click **Draw Zone** in the trigger config panel and draw directly on the map canvas.
+- **Select a layer feature** — choose an existing polygon feature from any layer in your project as the zone boundary.
+
+### Configure the Moving Entity
+
+Select the **data source layer** whose point features Geo Web IW should watch for movement. The platform continuously evaluates incoming position updates for features in that layer against the zone boundary.
+
+### Debounce Interval
+
+Set a **debounce interval** (in seconds) to prevent the workflow from firing repeatedly when an entity hovers near the zone boundary. During the debounce window, additional crossings of the same type are ignored for that entity. A value of `60` seconds is a sensible default for most vehicle-tracking scenarios.
+
+### Example Configuration
+
+```json
+{
+  "trigger": {
+    "type": "geofence",
+    "zone_layer_id": "layer_zone_restricted_001",
+    "zone_feature_id": "feature_poly_warehouse_perimeter",
+    "watch_layer_id": "layer_vehicles_live",
+    "event": "enter",
+    "debounce_seconds": 60
+  }
+}
+```
+
+---
+
+## Schedule Trigger
+
+The schedule trigger runs your workflow on a repeating time-based schedule defined with a cron expression.
+
+### Cron Expression Input
+
+Enter a standard 5-field cron expression directly, or choose from the built-in presets:
+
+| Preset | Cron expression |
+|---|---|
+| Every hour | `0 * * * *` |
+| Daily at midnight | `0 0 * * *` |
+| Weekly on Monday | `0 9 * * 1` |
+
+Click **Validate** after entering a custom expression to confirm the next five scheduled run times before saving.
+
+### Timezone
+
+Select your target timezone from the dropdown. All scheduled executions use the timezone you specify — the platform converts to UTC internally. If you don't set a timezone, executions default to UTC.
+
+### Example
+
+Run a workflow every Monday at 9:00 AM Eastern Time to export the weekly layer snapshot:
+
+```
+0 9 * * 1
+```
+
+With timezone set to `America/New_York`.
+
+<Accordion title="Cron expression field reference">
+  A 5-field cron expression follows this structure:
+
+  ```
+  ┌───────── minute (0–59)
+  │ ┌─────── hour (0–23)
+  │ │ ┌───── day of month (1–31)
+  │ │ │ ┌─── month (1–12)
+  │ │ │ │ ┌─ day of week (0–7, where 0 and 7 = Sunday)
+  │ │ │ │ │
+  * * * * *
+  ```
+
+  Use `*` for "every", `,` to list values, `-` for ranges, and `/` for steps. Example: `*/15 * * * *` runs every 15 minutes.
+</Accordion>
+
+---
+
+## Data Change Trigger
+
+The data change trigger fires when a feature in a specified layer is **added**, **updated**, or **deleted**.
+
+### Configure the Layer and Event
+
+Select the layer to watch and choose which change events should start the workflow:
+
+| Event | When it fires |
+|---|---|
+| **Feature Added** | A new feature is created in the layer |
+| **Feature Updated** | Any property or geometry on an existing feature changes |
+| **Feature Deleted** | A feature is removed from the layer |
+
+You can select one, two, or all three event types for a single trigger.
+
+### Filter by Attribute Value
+
+Narrow the trigger to fire only when a specific attribute meets a condition. This prevents high-volume layers from generating noise.
+
+**Example filter:** only fire when `status` changes to `"closed"`:
+
+```json
+{
+  "trigger": {
+    "type": "data_change",
+    "layer_id": "layer_work_orders_prod",
+    "events": ["feature_updated"],
+    "filter": {
+      "attribute": "status",
+      "operator": "equals",
+      "value": "closed"
+    }
+  }
+}
+```
+
+Supported filter operators are `equals`, `not_equals`, `contains`, `greater_than`, and `less_than`.
+
+---
+
+## Incoming Webhook Trigger
+
+The incoming webhook trigger gives your workflow a unique HTTPS endpoint URL. Any external system — a CRM, IoT platform, field app, or custom script — can fire the workflow by sending a POST request to that URL.
+
+### Your Workflow Endpoint
+
+When you add an incoming webhook trigger, Geo Web IW automatically generates a unique endpoint:
+
+```
+https://hooks.geowebhq.com/trigger/wh_<your_unique_id>
+```
+
+Copy this URL from the trigger config panel. Treat it like a secret — anyone with the URL can trigger your workflow. Rotate it using the **Regenerate URL** button if it is ever exposed.
+
+### Sending a Request
+
+POST a JSON body to the endpoint. The entire request body is available to downstream conditions and actions as `{{trigger.*}}` variables.
+
+```bash
+curl -X POST https://hooks.geowebhq.com/trigger/wh_abc123 \
+  -H "Content-Type: application/json" \
+  -d '{"lat": 37.7749, "lng": -122.4194, "event": "arrival"}'
+```
+
+Geo Web IW returns HTTP `200 OK` on receipt and queues the workflow for immediate execution. Requests with malformed JSON return `400 Bad Request`.
+
+### Optional Request Verification
+
+Enable **Signature Verification** in the trigger config panel to require an HMAC-SHA256 signature header (`X-GeoWebIW-Signature`) on every incoming request. This ensures only authorized senders can trigger the workflow.
+
+<Tip>
+  Each workflow supports exactly one trigger. If you need to react to multiple trigger types — for example, both a geofence crossing and an incoming webhook — duplicate the workflow and configure each copy with its own trigger. Both workflows can share the same actions by pointing to the same downstream systems.
+</Tip>

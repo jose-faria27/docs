@@ -1,0 +1,69 @@
+---
+title: "Workflows: Automate Spatial Processes in Geo Web IW"
+sidebarTitle: "Overview"
+description: "Geo Web IW workflows let you automate actions in response to spatial events. Learn what workflows can do and when to use them."
+---
+
+Workflows are the automation engine inside Geo Web IW. Instead of manually monitoring your maps and reacting to change, you define a trigger — a spatial event, a schedule, a data update, or an incoming webhook — and then specify the actions that fire automatically in response. Whether you're tracking vehicle fleets, syncing features to external systems, or alerting your team when something moves into a restricted area, workflows let you encode that logic once and let the platform do the work.
+
+## What Workflows Can Do
+
+Geo Web IW workflows respond to four broad categories of events:
+
+- **Geofence crossings** — fire when a moving entity enters or exits a polygon zone you define.
+- **Scheduled triggers** — run on a cron schedule you control, down to the minute.
+- **Incoming webhooks** — accept a POST request from any external system and immediately execute actions.
+- **Data changes** — react when a feature in one of your map layers is added, updated, or deleted.
+
+Combine those triggers with a rich action library — sending webhooks, updating features, exporting data, notifying Slack — and you can automate almost any location-driven process without writing server-side code.
+
+## Workflow Anatomy
+
+Every workflow follows the same three-part structure:
+
+**Trigger → Conditions → Actions**
+
+| Part | What it does |
+|---|---|
+| **Trigger** | The event that starts the workflow |
+| **Conditions** | Optional filters that must pass before actions run |
+| **Actions** | One or more steps that execute when conditions are met |
+
+Conditions let you add precision. For example, a data-change trigger can fire on every feature update, but a condition narrows execution to only features where `status` equals `"critical"`. Actions then send the alert or update the downstream system. See the [Triggers](/workflows/triggers) and [Automation](/workflows/automation) pages for full configuration details.
+
+## Common Use Cases
+
+These examples illustrate the kinds of problems workflows solve out of the box:
+
+<CardGroup cols={2}>
+  <Card title="Restricted Zone Alerts" icon="triangle-exclamation">
+    Alert your operations team instantly when a vehicle enters a restricted zone using a geofence trigger and an email or Slack action.
+  </Card>
+  <Card title="Scheduled Data Exports" icon="clock">
+    Export an updated GeoJSON snapshot of your spatial data to an S3 bucket every day at midnight without any manual steps.
+  </Card>
+  <Card title="CRM Sync on Attribute Change" icon="arrows-rotate">
+    Sync Geo Web IW polygon features to an external CRM automatically whenever a key attribute — like `status` or `owner` — is updated.
+  </Card>
+  <Card title="Slack Alerts for New Features" icon="bell">
+    Notify a Slack channel the moment a new point is added to a monitored layer, keeping field and office teams in sync in real time.
+  </Card>
+</CardGroup>
+
+## Explore Workflows
+
+<CardGroup cols={3}>
+  <Card title="Building Workflows" icon="hammer" href="/workflows/building">
+    Follow a step-by-step guide to create, configure, test, and activate your first workflow.
+  </Card>
+  <Card title="Triggers" icon="bolt" href="/workflows/triggers">
+    Learn how to configure geofence, schedule, data-change, and webhook triggers.
+  </Card>
+  <Card title="Automation & Actions" icon="gears" href="/workflows/automation">
+    Explore every available action type and learn how to chain them together.
+  </Card>
+</CardGroup>
+
+<Note>
+  Workflow execution is subject to monthly limits based on your plan tier. **Free** plans include 1,000 executions/month. **Pro** plans include 50,000 executions/month. **Enterprise** plans have unlimited executions. If you approach your limit, Geo Web IW will notify you by email and in the platform dashboard.
+</Note>

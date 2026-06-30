@@ -1,0 +1,154 @@
+---
+title: "Add and Manage Layers on Your Map"
+sidebarTitle: "Layers"
+description: "Learn how to add vector and raster layers to a map, reorder them, configure visibility rules, and connect layers to your data sources."
+---
+
+Layers are how you bring data onto the map canvas. Each layer connects to a data source, renders that data using a specific visual type, and sits in a stacking order that determines what draws on top of what. You can combine as many layer types as your map needs — point markers over a polygon choropleth over a satellite basemap, for example — and control exactly when and to whom each layer is visible.
+
+## Layer Types
+
+Geo Web IW supports six layer types. Choose the type that matches both your geometry and the story you want to tell.
+
+<CardGroup cols={2}>
+  <Card title="Point" icon="location-dot">
+    Renders individual point features as circles, markers, or custom icons. Use for locations, events, assets, and discrete observations.
+  </Card>
+  <Card title="Line" icon="route">
+    Renders LineString and MultiLineString features. Use for routes, roads, pipelines, boundaries, and network edges.
+  </Card>
+  <Card title="Polygon" icon="draw-polygon">
+    Renders Polygon and MultiPolygon features as filled shapes with optional strokes. Use for zones, regions, parcels, and coverage areas.
+  </Card>
+  <Card title="Raster" icon="image">
+    Renders image tile services (XYZ, TMS, or WMS/WMTS). Use for satellite imagery, aerial photos, and custom thematic tile sets.
+  </Card>
+  <Card title="Heatmap" icon="fire">
+    Aggregates point density into a continuous color gradient. Use when individual point markers overlap too heavily to be readable.
+  </Card>
+  <Card title="Cluster" icon="circle-nodes">
+    Groups nearby points into expanding circle clusters that split apart as you zoom in. Use for large point datasets where density varies by region.
+  </Card>
+</CardGroup>
+
+---
+
+## Adding a Layer
+
+<Steps>
+  <Step title="Open the Add Layer dialog">
+    In the **Layers** panel on the left side of the map editor, click **+ Add Layer**. The Add Layer dialog opens.
+  </Step>
+
+  <Step title="Choose a data source">
+    Select from your project's connected data sources. Geo Web IW lists all sources whose geometry type is compatible with at least one layer type. If a source you need is not listed, navigate to **Data → Sources** to connect it first.
+  </Step>
+
+  <Step title="Pick a layer type">
+    Select the layer type that matches your source geometry and visualization goal. Geo Web IW highlights compatible types in the picker and grays out incompatible ones (for example, you cannot apply a Polygon layer to a point source).
+  </Step>
+
+  <Step title="Name the layer">
+    Give the layer a clear, specific name. This name appears in the Layers panel, the legend, and any popup headers, so choose something your viewers will recognize — for example, *Active Delivery Zones* rather than *Layer 3*.
+  </Step>
+
+  <Step title="Confirm and style">
+    Click **Add Layer**. The layer appears at the top of the Layers panel and is selected automatically. The Properties panel switches to layer-level settings where you can begin styling. See [Styling](/maps/styling) for details.
+  </Step>
+</Steps>
+
+---
+
+## Layer Panel Controls
+
+The Layers panel lists every layer in bottom-to-top render order. Layers at the top of the list draw over layers below them.
+
+| Control | How to Use |
+|---|---|
+| **Reorder** | Drag a layer row up or down to change its position in the stack. Drop it above or below another layer to adjust draw order. |
+| **Toggle visibility** | Click the **eye icon** next to a layer name to show or hide it. Hidden layers remain configured — they are just not rendered. |
+| **Lock layer** | Click the **lock icon** to prevent accidental edits. Locked layers cannot be moved, restyled, or deleted until you unlock them. |
+| **Duplicate layer** | Right-click a layer row and select **Duplicate** to copy the layer with all its style and filter settings intact. |
+| **Delete layer** | Right-click a layer row and select **Delete**. This removes the layer from the map but does not delete the underlying data source. |
+
+<Tip>
+  Keep your most important data layers near the top of the stack and lock your basemap context layers (administrative boundaries, roads) near the bottom to prevent them from being accidentally moved or restyled.
+</Tip>
+
+---
+
+## Filter by Attribute
+
+Attribute filters let you show or hide features based on the values of their properties without modifying the source data.
+
+<Steps>
+  <Step title="Select the layer">
+    Click the layer name in the Layers panel to open it in the Properties panel.
+  </Step>
+
+  <Step title="Open the Filters section">
+    Scroll to the **Filters** section in the Properties panel and click **+ Add Filter**.
+  </Step>
+
+  <Step title="Configure the filter rule">
+    Choose a **field** from the dropdown, select an **operator** (`==`, `!=`, `>`, `<`, `>=`, `<=`, `in`, `not in`), and enter a **value**. For example, to show only active zones:
+
+    ```text
+    status == "active"
+    ```
+
+    You can chain multiple filter rules together using **AND** or **OR** logic.
+  </Step>
+
+  <Step title="Apply">
+    Click **Apply**. The map canvas immediately redraws the layer to show only the features that match your filter. A filter badge appears on the layer row in the Layers panel to signal that a filter is active.
+  </Step>
+</Steps>
+
+<Info>
+  Attribute filters are non-destructive and view-only. They do not modify your source data or affect other maps that use the same source. Remove or adjust them at any time from the Filters section.
+</Info>
+
+---
+
+## Layer Popups
+
+Popups appear when a viewer clicks a feature on the map. Configure which fields appear in the popup to give your audience just the context they need.
+
+<Steps>
+  <Step title="Open the Popup section">
+    Select the layer in the Layers panel, then scroll to the **Popup** section in the Properties panel.
+  </Step>
+
+  <Step title="Enable popups">
+    Toggle **Enable popup** on. By default, all fields from the data source are listed.
+  </Step>
+
+  <Step title="Select and label fields">
+    Uncheck any fields you do not want to display. For each visible field, you can override the raw property name with a human-readable label — for example, rename `est_pop_2020` to *Estimated Population (2020)*.
+  </Step>
+
+  <Step title="Set a title field">
+    Choose one field to act as the popup title. This field is displayed prominently at the top of the popup card. A name, ID, or location field works well here.
+  </Step>
+</Steps>
+
+---
+
+## Frequently Asked Questions
+
+<Accordion title="Can I use external WMS or WMTS tile services as a layer?">
+  Yes. Select **Raster** as the layer type when adding a layer, then choose **External Tile URL** as the source. Enter your WMS or WMTS endpoint URL. For WMS services, append the required query parameters (`SERVICE=WMS&REQUEST=GetMap&...`) directly in the URL field. Geo Web IW fetches and renders the tiles at the correct zoom and extent automatically.
+</Accordion>
+
+<Accordion title="What is the maximum number of layers per map?">
+  Each map supports up to 50 layers. If you need more, consider consolidating related layers using multi-feature data sources or splitting your content across multiple maps connected via a workflow.
+</Accordion>
+
+<Accordion title="Can I share a single layer across multiple maps?">
+  Yes. Because layers connect to data sources rather than embedding data directly, you can add the same source as a layer on any number of maps. Updates to the source are reflected on all maps that reference it.
+</Accordion>
+
+<Tip>
+  You can have a maximum of **50 layers per map**. If you are approaching this limit, consider merging related datasets at the data source level or using filter rules to display subsets of a single multi-feature layer instead of separate layers per category.
+</Tip>

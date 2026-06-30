@@ -1,0 +1,389 @@
+---
+title: "Data Sources API — Upload, Query, and Export Spatial Data"
+sidebarTitle: "Data API"
+description: "REST API endpoints to create data sources, run spatial queries, fetch feature collections, and export data from Geo Web IW programmatically."
+---
+
+Data sources are the authoritative spatial datasets that power your layers, workflows, and reports. Each source holds a collection of GeoJSON features that you can query with spatial and attribute filters, transform with operations like buffering and intersection, and export in multiple geospatial formats. Use the Data Sources API to ingest new datasets, run ad-hoc spatial queries, retrieve paginated feature collections, and pull exports into downstream pipelines — all without opening the Geo Web IW interface.
+
+All requests require an `Authorization: Bearer YOUR_API_KEY` header. The base URL for every endpoint on this page is `https://api.geowebhq.com/v1`.
+
+---
+
+## List data sources
+
+Retrieve all data sources available in a project.
+
+**`GET /data/sources`**
+
+### Query parameters
+
+<ParamField query="projectId" type="string" required>
+  Return only sources belonging to this project.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="data" type="array">
+  Array of data source metadata objects.
+  <Expandable title="Data source object">
+    <ResponseField name="id" type="string">Unique source identifier, prefixed `src_`.</ResponseField>
+    <ResponseField name="name" type="string">Display name of the data source.</ResponseField>
+    <ResponseField name="projectId" type="string">Project this source belongs to.</ResponseField>
+    <ResponseField name="featureCount" type="number">Total number of features stored in the source.</ResponseField>
+    <ResponseField name="geometryType" type="string">Dominant geometry type: `Point`, `LineString`, `Polygon`, or `Mixed`.</ResponseField>
+    <ResponseField name="bbox" type="array">Bounding box `[minLng, minLat, maxLng, maxLat]` of all features.</ResponseField>
+    <ResponseField name="crs" type="string">Coordinate reference system, e.g. `EPSG:4326`.</ResponseField>
+    <ResponseField name="createdAt" type="string">ISO 8601 creation timestamp.</ResponseField>
+    <ResponseField name="updatedAt" type="string">ISO 8601 last-updated timestamp.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl "https://api.geowebhq.com/v1/data/sources?projectId=proj_abc123" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+</CodeGroup>
+
+```json Response
+{
+  "data": [
+    {
+      "id": "src_xyz789",
+      "name": "Service Zones Q4",
+      "projectId": "proj_abc123",
+      "featureCount": 142,
+      "geometryType": "Polygon",
+      "bbox": [-74.259, 40.477, -73.700, 40.917],
+      "crs": "EPSG:4326",
+      "createdAt": "2024-10-01T09:00:00Z",
+      "updatedAt": "2024-11-01T11:00:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## Create a data source
+
+Create a new data source by posting an inline GeoJSON `FeatureCollection`. All features are stored, indexed, and immediately available for use in layers and workflows.
+
+**`POST /data/sources`**
+
+<Note>
+  For large datasets or file-based uploads (Shapefile, CSV, KML), use the multipart file upload endpoint at `POST /data/sources/upload` instead. That endpoint accepts `multipart/form-data` with a `file` field and the same `name` and `projectId` fields as form parts.
+</Note>
+
+### Body parameters
+
+<ParamField body="name" type="string" required>
+  Display name for the new data source.
+</ParamField>
+
+<ParamField body="projectId" type="string" required>
+  Project to store the source in.
+</ParamField>
+
+<ParamField body="geojson" type="object" required>
+  A valid GeoJSON `FeatureCollection` object. All features must share the same coordinate reference system (EPSG:4326 assumed unless a `crs` member is present).
+</ParamField>
+
+Returns the created data source metadata object with HTTP **201 Created**.
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.geowebhq.com/v1/data/sources \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Service Zones Q4",
+    "projectId": "proj_abc123",
+    "geojson": {
+      "type": "FeatureCollection",
+      "features": [
+        {
+          "type": "Feature",
+          "properties": { "name": "Zone A", "status": "active" },
+          "geometry": {
+            "type": "Polygon",
+            "coordinates": [[
+              [-74.01, 40.71],
+              [-74.00, 40.71],
+              [-74.00, 40.72],
+              [-74.01, 40.72],
+              [-74.01, 40.71]
+            ]]
+          }
+        }
+      ]
+    }
+  }'
+```
+</CodeGroup>
+
+```json Response (201)
+{
+  "id": "src_xyz789",
+  "name": "Service Zones Q4",
+  "projectId": "proj_abc123",
+  "featureCount": 1,
+  "geometryType": "Polygon",
+  "bbox": [-74.01, 40.71, -74.00, 40.72],
+  "crs": "EPSG:4326",
+  "createdAt": "2024-11-01T12:00:00Z",
+  "updatedAt": "2024-11-01T12:00:00Z"
+}
+```
+
+---
+
+## Get a data source
+
+Retrieve metadata for a single data source. This endpoint returns source-level information only — use the [Fetch features](#fetch-features) endpoint to retrieve individual features.
+
+**`GET /data/sources/{id}`**
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  The data source ID, e.g. `src_xyz789`.
+</ParamField>
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl https://api.geowebhq.com/v1/data/sources/src_xyz789 \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+</CodeGroup>
+
+```json Response
+{
+  "id": "src_xyz789",
+  "name": "Service Zones Q4",
+  "projectId": "proj_abc123",
+  "featureCount": 142,
+  "geometryType": "Polygon",
+  "bbox": [-74.259, 40.477, -73.700, 40.917],
+  "crs": "EPSG:4326",
+  "createdAt": "2024-10-01T09:00:00Z",
+  "updatedAt": "2024-11-01T11:00:00Z"
+}
+```
+
+---
+
+## Fetch features
+
+Retrieve features from a data source as a GeoJSON `FeatureCollection`. Supports spatial bounding-box filtering, attribute filtering, and pagination.
+
+**`GET /data/sources/{id}/features`**
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  The data source ID.
+</ParamField>
+
+### Query parameters
+
+<ParamField query="bbox" type="string">
+  Spatial bounding box filter as a comma-separated string: `minLng,minLat,maxLng,maxLat`. Only features that intersect the bbox are returned.
+</ParamField>
+
+<ParamField query="limit" type="number" default="100">
+  Maximum number of features to return per request. Maximum is `1000`.
+</ParamField>
+
+<ParamField query="offset" type="number" default="0">
+  Number of features to skip for pagination.
+</ParamField>
+
+<ParamField query="filter" type="string">
+  URL-encoded JSON string representing an attribute filter, e.g. `{"attribute":"status","operator":"==","value":"active"}`.
+</ParamField>
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl "https://api.geowebhq.com/v1/data/sources/src_xyz789/features?bbox=-74.05,40.70,-73.95,40.75&limit=10&filter=%7B%22attribute%22%3A%22status%22%2C%22operator%22%3A%22%3D%3D%22%2C%22value%22%3A%22active%22%7D" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+</CodeGroup>
+
+```json Response
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "id": "feat_001",
+      "properties": {
+        "name": "Zone A",
+        "status": "active"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-74.01, 40.71],
+          [-74.00, 40.71],
+          [-74.00, 40.72],
+          [-74.01, 40.72],
+          [-74.01, 40.71]
+        ]]
+      }
+    }
+  ],
+  "meta": {
+    "total": 38,
+    "limit": 10,
+    "offset": 0
+  }
+}
+```
+
+---
+
+## Run a spatial query
+
+Execute a multi-step spatial query pipeline against a data source. Chain filter, buffer, intersect, and other spatial operations in a single request to receive a processed `FeatureCollection` in response.
+
+**`POST /data/query`**
+
+<Tip>
+  Operations are applied in the order they appear in the `operations` array. Filter early in the pipeline to reduce the dataset before running expensive spatial operations like buffers.
+</Tip>
+
+### Body parameters
+
+<ParamField body="sourceId" type="string" required>
+  ID of the data source to query.
+</ParamField>
+
+<ParamField body="operations" type="array" required>
+  Ordered array of operation objects to apply.
+  <Expandable title="Operation object fields">
+    <ParamField body="type" type="string">
+      Operation type. Supported values: `filter`, `buffer`, `intersect`, `union`, `clip`, `centroid`.
+    </ParamField>
+    <ParamField body="attribute" type="string">
+      Attribute name (used by the `filter` operation).
+    </ParamField>
+    <ParamField body="operator" type="string">
+      Filter comparison operator: `==`, `!=`, `>`, `<`, `>=`, `<=`, `in`.
+    </ParamField>
+    <ParamField body="value" type="any">
+      Value to compare against (used by the `filter` operation).
+    </ParamField>
+    <ParamField body="distance" type="number">
+      Buffer distance in the specified `unit` (used by the `buffer` operation).
+    </ParamField>
+    <ParamField body="unit" type="string">
+      Distance unit for buffer: `meters`, `kilometers`, `miles`.
+    </ParamField>
+  </Expandable>
+</ParamField>
+
+Returns a GeoJSON `FeatureCollection` of the processed result.
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.geowebhq.com/v1/data/query \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "sourceId": "src_abc123",
+    "operations": [
+      {
+        "type": "filter",
+        "attribute": "status",
+        "operator": "==",
+        "value": "active"
+      },
+      {
+        "type": "buffer",
+        "distance": 1000,
+        "unit": "meters"
+      }
+    ]
+  }'
+```
+</CodeGroup>
+
+```json Response
+{
+  "type": "FeatureCollection",
+  "features": [
+    {
+      "type": "Feature",
+      "properties": {
+        "name": "Zone A",
+        "status": "active"
+      },
+      "geometry": {
+        "type": "Polygon",
+        "coordinates": [[
+          [-74.019, 40.701],
+          [-73.991, 40.701],
+          [-73.991, 40.729],
+          [-74.019, 40.729],
+          [-74.019, 40.701]
+        ]]
+      }
+    }
+  ]
+}
+```
+
+---
+
+## Export a data source
+
+Download all features in a data source as a file in your chosen geospatial format.
+
+**`GET /data/sources/{id}/export`**
+
+<Note>
+  This endpoint streams a binary file download. The `Content-Disposition` response header contains the suggested filename, e.g. `attachment; filename="service-zones-q4.geojson"`.
+</Note>
+
+### Path parameters
+
+<ParamField path="id" type="string" required>
+  The data source ID to export.
+</ParamField>
+
+### Query parameters
+
+<ParamField query="format" type="string" default="geojson">
+  Export format. One of: `geojson`, `shapefile`, `csv`.
+</ParamField>
+
+<ParamField query="crs" type="string" default="EPSG:4326">
+  Target coordinate reference system for the export, e.g. `EPSG:4326` or `EPSG:3857`.
+</ParamField>
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl -OJ "https://api.geowebhq.com/v1/data/sources/src_xyz789/export?format=shapefile&crs=EPSG:4326" \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+</CodeGroup>
+
+```text Response
+Binary file download.
+Content-Type: application/zip (shapefile) | application/geo+json (geojson) | text/csv (csv)
+Content-Disposition: attachment; filename="service-zones-q4.zip"
+```

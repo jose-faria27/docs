@@ -1,0 +1,100 @@
+---
+title: "Build Your First Geo Web IW Workflow"
+sidebarTitle: "Building"
+description: "Create a new workflow in Geo Web IW, configure a trigger, add conditions, and define actions with this step-by-step guide."
+---
+
+Building a workflow in Geo Web IW takes only a few minutes. You pick a trigger that matches the spatial event you care about, optionally narrow execution with conditions, define the actions that should fire, and then activate — no code required. This guide walks you through every step from a blank canvas to a live, tested workflow.
+
+## Create a Workflow
+
+<Steps>
+  <Step title="Open the Workflows tab">
+    Navigate to your project in the Geo Web IW dashboard and click the **Workflows** tab in the left sidebar. You'll see a list of all existing workflows for the project (or an empty state if this is your first one).
+  </Step>
+  <Step title="Create and name your workflow">
+    Click **New Workflow**. A dialog prompts you to enter a name and an optional description. Choose a name that makes the purpose obvious — for example, *"Alert ops on restricted zone entry"* or *"Daily S3 export – parcels layer"*. Click **Create** to open the workflow builder canvas.
+  </Step>
+  <Step title="Choose a trigger">
+    Every workflow starts with a trigger node. Click **Add Trigger** on the canvas, then select one of the four trigger types:
+
+    - **Geofence** — fires on spatial enter/exit events
+    - **Schedule** — runs on a cron expression
+    - **Data Change** — reacts to layer feature mutations
+    - **Incoming Webhook** — starts on an external HTTP POST
+
+    Configure the trigger's settings in the right-hand panel. See the [Triggers](/workflows/triggers) page for full details on each type.
+  </Step>
+  <Step title="Add conditions (optional)">
+    After configuring the trigger, click **Add Condition** to insert a filter step. Conditions evaluate attribute values on the trigger payload or on related features — for example, only proceed when `feature.properties.priority` equals `"high"`. You can chain multiple conditions using AND/OR logic. If you skip this step, the workflow runs every time the trigger fires.
+  </Step>
+  <Step title="Add one or more actions">
+    Click **Add Action** to open the action picker. Choose from options like **Send Webhook**, **Send Email Notification**, **Update Feature Attribute**, or **Slack Notification**. Configure each action using the form panel on the right. Use `{{trigger.*}}` template variables to inject dynamic data from the trigger payload into your action configuration.
+
+    Add as many actions as needed. They execute in sequence, top to bottom, in the order you arrange them on the canvas.
+  </Step>
+  <Step title="Test the workflow">
+    Before activating the workflow, click **Test** in the top toolbar. The built-in test runner lets you manually fire a sample event that matches your trigger type. Review the **Execution Log** panel that appears — each step shows its input, output, and status (passed, skipped, or failed). Fix any configuration errors and re-run the test until all steps pass.
+  </Step>
+  <Step title="Activate the workflow">
+    Once your test passes, toggle the workflow status from **Draft** to **Active** using the toggle in the top-right corner of the builder. Your workflow is now live and will respond to real events automatically.
+  </Step>
+</Steps>
+
+## Workflow Builder UI
+
+The builder canvas is a visual node graph where each step in your workflow is represented as a connected card.
+
+<CardGroup cols={3}>
+  <Card title="Trigger node" icon="bolt">
+    Always the first node. A workflow has exactly one trigger. Click it to edit trigger settings in the side panel.
+  </Card>
+  <Card title="Condition node" icon="filter">
+    Optional filter placed between the trigger and actions. Drag to reorder. Use the side panel to define attribute-based rules.
+  </Card>
+  <Card title="Action node" icon="gears">
+    One or more action cards follow the condition. Drag them into order. Each card shows its type icon and a summary of its configuration.
+  </Card>
+</CardGroup>
+
+To add a new node, click the **+** button that appears on the connecting line between any two existing nodes, or use the **Add** buttons in the toolbar. To delete a node, select it and press **Delete** or use the node's context menu.
+
+## Testing Workflows
+
+The test runner simulates a real trigger event so you can verify your entire workflow before it touches live data or external systems.
+
+<Tabs>
+  <Tab title="Running a Test">
+    1. Click **Test** in the builder toolbar.
+    2. In the **Test Event** panel, fill in the sample payload fields (pre-populated based on your trigger type).
+    3. Click **Run Test**.
+    4. Watch each node light up in the canvas as execution progresses.
+    5. Open the **Execution Log** tab to inspect the full input/output for every step.
+  </Tab>
+  <Tab title="Reading the Execution Log">
+    Each log entry shows:
+
+    - **Step name** — which node ran
+    - **Status** — `success`, `skipped` (condition not met), or `error`
+    - **Duration** — time taken in milliseconds
+    - **Input / Output** — the JSON data passed in and returned
+
+    Click any log entry to expand the full JSON detail. If a step errored, the error message appears inline with a link to the relevant documentation.
+  </Tab>
+</Tabs>
+
+## Workflow Status
+
+A workflow exists in one of three states at any time:
+
+| Status | Behavior |
+|---|---|
+| **Draft** | Saved but never activated. Will not respond to real events. Safe for editing. |
+| **Active** | Fully live. Responds to real trigger events and consumes your monthly execution quota. |
+| **Paused** | Previously active but temporarily suspended. Real events are ignored. Resumes from where it left off when you reactivate. |
+
+To pause a running workflow, open it in the builder and toggle the status switch to **Paused**. To resume it, toggle back to **Active**. Pausing does not delete execution history or configuration.
+
+<Tip>
+  When building a new workflow, wire up a simple **Send Webhook** action pointing to a request-inspection service like [Webhook.site](https://webhook.site) before adding any complex logic. This lets you confirm that your trigger fires correctly and that the payload shape matches your expectations — without risking writes to production data or noisy notifications to your team.
+</Tip>

@@ -1,0 +1,91 @@
+---
+title: "Import Spatial Data into Geo Web IW"
+sidebarTitle: "Importing"
+description: "Upload GeoJSON, CSV, Shapefile, or KML files to Geo Web IW, or connect a live external data source to keep your layers always up to date."
+---
+
+Bringing your spatial data into Geo Web IW is the first step toward building map-driven workflows. You can upload files directly from your machine, or connect a live external source — such as a REST API or a PostGIS database — so your layers automatically reflect the latest data without manual re-uploads.
+
+## Supported File Upload Formats
+
+Geo Web IW accepts the four most common geospatial file formats for direct upload:
+
+<CardGroup cols={2}>
+  <Card title="GeoJSON" icon="brackets-curly">
+    The recommended format for all geometry types. Coordinates must be in WGS84 (EPSG:4326). Supports points, lines, polygons, and multi-part geometries.
+  </Card>
+  <Card title="CSV" icon="table">
+    Ideal for point data. Your file must include columns for latitude and longitude — you map these during import. All other columns become feature properties.
+  </Card>
+  <Card title="Shapefile (.zip)" icon="file-zipper">
+    Upload a single `.zip` archive containing at minimum `.shp`, `.dbf`, `.prj`, and `.shx` files. Geo Web IW auto-reprojects to WGS84.
+  </Card>
+  <Card title="KML / KMZ" icon="earth-americas">
+    Google Earth format with support for points, lines, and polygons. KMZ archives are automatically decompressed to KML during import.
+  </Card>
+</CardGroup>
+
+<Tip>
+  Use **GeoJSON** when you need the highest geometry fidelity and want to preserve all geometry types. Use **CSV** for simple point datasets where your data already contains latitude and longitude columns.
+</Tip>
+
+## Uploading a File
+
+<Steps>
+  <Step title="Open Data Sources">
+    Navigate to your project and click **Data Sources** in the left sidebar.
+  </Step>
+  <Step title="Start a new upload">
+    Click **Add Data Source**, then select **Upload File** from the dropdown menu.
+  </Step>
+  <Step title="Select your file">
+    Drag your file into the upload area, or click **Browse** to pick it from your filesystem. Geo Web IW detects the format automatically based on the file extension.
+  </Step>
+  <Step title="Map coordinate columns (CSV only)">
+    If you uploaded a CSV, use the **Latitude Column** and **Longitude Column** dropdowns to point Geo Web IW to the correct fields. All other columns are imported as feature properties.
+  </Step>
+  <Step title="Preview and confirm column types">
+    Review the feature preview panel. Geo Web IW infers column types (string, number, boolean, date) automatically — click any column header to override the inferred type before proceeding.
+  </Step>
+  <Step title="Import the data source">
+    Click **Import**. Geo Web IW processes your file and adds the new data source to your project. For large files this may take a few moments — a progress indicator will keep you updated.
+  </Step>
+</Steps>
+
+## Connecting a Live External Source
+
+Instead of uploading a static file, you can connect Geo Web IW to a live external source that fetches fresh data on a schedule or on demand.
+
+<Accordion title="REST API Endpoint">
+  Provide the full URL of any REST API that returns GeoJSON or a JSON array of objects with coordinate fields. Use the **Poll Interval** setting to control how often Geo Web IW fetches new data — options range from every 1 minute to every 24 hours.
+
+  Configure optional request headers (for example, `Authorization: Bearer <token>`) in the **Headers** panel under the connection settings.
+</Accordion>
+
+<Accordion title="ArcGIS Feature Service URL">
+  Paste the Feature Service URL directly into the **Service URL** field. Geo Web IW queries the service using the ArcGIS REST protocol and keeps the layer synchronized. Supports both public and authenticated Feature Services — enter your ArcGIS credentials or token in the **Authentication** section.
+</Accordion>
+
+<Accordion title="PostGIS / PostgreSQL Connection">
+  <Warning>
+    PostGIS and PostgreSQL connections are available on **Pro** and **Enterprise** plans only.
+  </Warning>
+
+  Provide your database host, port, database name, schema, table or view name, and credentials. Geo Web IW reads the geometry column automatically. Use the **Geometry Column** override if your table uses a non-standard column name.
+
+  For security, allowlist the Geo Web IW IP range (`35.186.0.0/16`) in your database firewall rules before saving the connection.
+</Accordion>
+
+## Data Source Limits
+
+Your plan determines how many data sources you can create and the maximum file size per source.
+
+| Plan | Max Data Sources | Max File Size |
+| --- | --- | --- |
+| Free | 5 | 10 MB |
+| Pro | 50 | 500 MB |
+| Enterprise | Unlimited | Unlimited |
+
+<Info>
+  Live external sources — REST API, ArcGIS, and PostGIS connections — each count as one data source toward your plan limit, regardless of how many features they contain.
+</Info>

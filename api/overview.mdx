@@ -1,0 +1,129 @@
+---
+title: "Geo Web IW REST API Reference Overview"
+sidebarTitle: "Overview"
+description: "The Geo Web IW REST API lets you programmatically manage maps, layers, data sources, and workflows. All endpoints return JSON over HTTPS."
+---
+
+The Geo Web IW REST API gives you full programmatic control over your geospatial platform — create and update maps, manage layers and data sources, trigger workflows, and retrieve spatial analytics, all from your own applications or automation pipelines. Every request travels over HTTPS and every response body is JSON.
+
+## Base URL
+
+All API endpoints share the following base URL. Include the version prefix (`v1`) in every request path.
+
+```
+https://api.geowebhq.com/v1
+```
+
+## Request Format
+
+Send request bodies as JSON and set the `Content-Type` header to `application/json` for all `POST`, `PUT`, and `PATCH` requests. `GET` and `DELETE` requests do not require a body — pass filters and options as URL query parameters instead.
+
+<Note>
+  Always include `Content-Type: application/json` on write requests. Omitting this header causes the API to reject the body and return a `400 Bad Request`.
+</Note>
+
+## Response Format
+
+Every response from the API is a JSON object. Successful responses wrap the returned resource or collection in a top-level `data` field alongside a `meta` object. Failed requests return an `error` object in place of `data`.
+
+**Success response shape**
+
+```json
+{
+  "data": { ... },
+  "meta": {
+    "requestId": "req_abc123",
+    "timestamp": "2024-11-01T12:00:00Z"
+  }
+}
+```
+
+**Error response shape**
+
+```json
+{
+  "error": {
+    "code": "RESOURCE_NOT_FOUND",
+    "message": "Map with ID map_xyz not found.",
+    "requestId": "req_def456"
+  }
+}
+```
+
+Use the `error.code` field to drive programmatic error handling and the `requestId` when contacting support.
+
+## HTTP Status Codes
+
+The API uses standard HTTP status codes to communicate the outcome of every request.
+
+| Status Code | Meaning |
+|---|---|
+| `200 OK` | The request succeeded and the response body contains the result. |
+| `201 Created` | A new resource was created successfully. |
+| `400 Bad Request` | The request was malformed, missing required fields, or contained invalid values. |
+| `401 Unauthorized` | No API key was provided, or the provided key is invalid or revoked. |
+| `403 Forbidden` | The API key is valid but does not have the scope required for this action. |
+| `404 Not Found` | The requested resource does not exist or is not accessible with your key. |
+| `429 Too Many Requests` | You have exceeded your plan's rate limit. See the [Rate Limits](/api/rate-limits) page. |
+| `500 Internal Server Error` | An unexpected error occurred on the server. Retry with exponential backoff. |
+
+## Pagination
+
+All list endpoints support cursor-free, page-based pagination via two query parameters.
+
+| Parameter | Type | Default | Max | Description |
+|---|---|---|---|---|
+| `page` | integer | `1` | — | The page number to retrieve. |
+| `pageSize` | integer | `20` | `100` | The number of items per page. |
+
+Paginated responses include a `meta.pagination` object so you can navigate the full result set without issuing a `HEAD` request.
+
+```json
+{
+  "data": [ ... ],
+  "meta": {
+    "requestId": "req_ghi789",
+    "timestamp": "2024-11-01T12:00:00Z",
+    "pagination": {
+      "total": 284,
+      "page": 2,
+      "pageSize": 20,
+      "totalPages": 15
+    }
+  }
+}
+```
+
+<Tip>
+  Set `pageSize` to the largest value your use case needs in a single view. Fewer round trips means lower latency and less quota consumption.
+</Tip>
+
+## Resource IDs
+
+Every resource in the API carries a prefixed string ID. The prefix encodes the resource type, making it easy to identify objects at a glance, validate IDs client-side, and avoid accidental cross-resource mixups.
+
+| Prefix | Resource type |
+|---|---|
+| `map_` | Maps |
+| `lyr_` | Layers |
+| `src_` | Data sources |
+| `wf_` | Workflows |
+
+For example, a valid map ID looks like `map_k9x2p1qr` and a workflow ID looks like `wf_7tnm4vcs`.
+
+## Explore the API
+
+<CardGroup cols={2}>
+  <Card title="Authentication" icon="key" href="/api/authentication">
+    Generate an API key, add it to your requests, and understand scopes and auth errors.
+  </Card>
+  <Card title="Rate Limits" icon="gauge-high" href="/api/rate-limits">
+    Review per-plan quotas, read rate limit headers, and handle 429 responses gracefully.
+  </Card>
+  <Card title="Maps" icon="map" href="/api/maps">
+    Create, update, list, and delete interactive maps and their configurations.
+  </Card>
+  <Card title="Workflows" icon="diagram-project" href="/api/workflows">
+    Trigger and manage automated spatial processing workflows via the API.
+  </Card>
+</CardGroup>

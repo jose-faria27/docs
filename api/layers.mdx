@@ -1,0 +1,343 @@
+---
+title: "Layers API — Add and Manage Map Layers"
+sidebarTitle: "Layers API"
+description: "REST API endpoints to add, configure, reorder, and remove layers on a Geo Web IW map. Connect data sources and set visual style properties."
+---
+
+Layers are the visual building blocks of every Geo Web IW map. Each layer binds a data source to a set of style rules — controlling fill colour, stroke weight, opacity, and render type — and stacks on top of the basemap in a defined order. Use the Layers API to add new layers, fine-tune their appearance, change their draw order, and remove them programmatically as your data or design requirements evolve.
+
+All requests require an `Authorization: Bearer YOUR_API_KEY` header. The base URL for every endpoint on this page is `https://api.geowebhq.com/v1`.
+
+---
+
+## List layers
+
+Retrieve all layers attached to a map in their current render order (bottom to top).
+
+**`GET /maps/{mapId}/layers`**
+
+### Path parameters
+
+<ParamField path="mapId" type="string" required>
+  ID of the map whose layers you want to list.
+</ParamField>
+
+### Response fields
+
+<ResponseField name="data" type="array">
+  Ordered array of layer objects, from bottom (index 0) to top.
+  <Expandable title="Layer object">
+    <ResponseField name="id" type="string">Unique layer identifier, prefixed `lyr_`.</ResponseField>
+    <ResponseField name="name" type="string">Display name of the layer.</ResponseField>
+    <ResponseField name="sourceId" type="string">ID of the data source powering this layer.</ResponseField>
+    <ResponseField name="type" type="string">Render type: `point`, `line`, `polygon`, `heatmap`, `cluster`, or `raster`.</ResponseField>
+    <ResponseField name="style" type="object">Visual style properties (fill, stroke, opacity, radius, etc.).</ResponseField>
+    <ResponseField name="filter" type="object">Optional attribute filter applied to the source features.</ResponseField>
+    <ResponseField name="visible" type="boolean">Whether the layer is currently shown on the map.</ResponseField>
+    <ResponseField name="order" type="number">Zero-based render order index.</ResponseField>
+    <ResponseField name="createdAt" type="string">ISO 8601 creation timestamp.</ResponseField>
+    <ResponseField name="updatedAt" type="string">ISO 8601 last-updated timestamp.</ResponseField>
+  </Expandable>
+</ResponseField>
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl https://api.geowebhq.com/v1/maps/map_01hx9k2pqr/layers \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+</CodeGroup>
+
+```json Response
+{
+  "data": [
+    {
+      "id": "lyr_01abc",
+      "name": "Service Zones",
+      "sourceId": "src_xyz789",
+      "type": "polygon",
+      "style": {
+        "fill": "#3b82f6",
+        "fillOpacity": 0.3,
+        "stroke": "#1d4ed8",
+        "strokeWidth": 2
+      },
+      "filter": null,
+      "visible": true,
+      "order": 0,
+      "createdAt": "2024-11-01T12:30:00Z",
+      "updatedAt": "2024-11-01T12:30:00Z"
+    }
+  ]
+}
+```
+
+---
+
+## Add a layer
+
+Add a new layer to a map and bind it to an existing data source. The new layer is added on top of the current layer stack.
+
+**`POST /maps/{mapId}/layers`**
+
+### Path parameters
+
+<ParamField path="mapId" type="string" required>
+  ID of the map to add the layer to.
+</ParamField>
+
+### Body parameters
+
+<ParamField body="name" type="string" required>
+  Display name shown in the map legend and layer panel.
+</ParamField>
+
+<ParamField body="sourceId" type="string" required>
+  ID of the data source to visualise. Create data sources via the [Data Sources API](/api/data).
+</ParamField>
+
+<ParamField body="type" type="string" required>
+  Render type for the layer. One of: `point`, `line`, `polygon`, `heatmap`, `cluster`, `raster`.
+</ParamField>
+
+<ParamField body="style" type="object">
+  Visual style properties for the layer. Accepted keys vary by type.
+  <Expandable title="Common style properties">
+    <ParamField body="fill" type="string">Hex fill colour (polygon and point types).</ParamField>
+    <ParamField body="fillOpacity" type="number">Fill opacity from `0.0` to `1.0`.</ParamField>
+    <ParamField body="stroke" type="string">Hex stroke/outline colour.</ParamField>
+    <ParamField body="strokeWidth" type="number">Stroke width in pixels.</ParamField>
+    <ParamField body="radius" type="number">Point radius in pixels (point and cluster types).</ParamField>
+    <ParamField body="opacity" type="number">Overall layer opacity from `0.0` to `1.0`.</ParamField>
+  </Expandable>
+</ParamField>
+
+<ParamField body="filter" type="object">
+  Optional attribute filter to limit which features from the source are shown. Uses a simple expression format: `{ "attribute": "status", "operator": "==", "value": "active" }`.
+</ParamField>
+
+Returns the created layer object with HTTP **201 Created**.
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.geowebhq.com/v1/maps/map_01hx9k2pqr/layers \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "name": "Service Zones",
+    "sourceId": "src_xyz789",
+    "type": "polygon",
+    "style": {
+      "fill": "#3b82f6",
+      "fillOpacity": 0.3,
+      "stroke": "#1d4ed8",
+      "strokeWidth": 2
+    },
+    "filter": {
+      "attribute": "status",
+      "operator": "==",
+      "value": "active"
+    }
+  }'
+```
+</CodeGroup>
+
+```json Response (201)
+{
+  "id": "lyr_01abc",
+  "name": "Service Zones",
+  "sourceId": "src_xyz789",
+  "type": "polygon",
+  "style": {
+    "fill": "#3b82f6",
+    "fillOpacity": 0.3,
+    "stroke": "#1d4ed8",
+    "strokeWidth": 2
+  },
+  "filter": {
+    "attribute": "status",
+    "operator": "==",
+    "value": "active"
+  },
+  "visible": true,
+  "order": 1,
+  "createdAt": "2024-11-01T13:00:00Z",
+  "updatedAt": "2024-11-01T13:00:00Z"
+}
+```
+
+---
+
+## Update a layer
+
+Update a layer's name, style, filter, or visibility. Send only the fields you want to change.
+
+**`PUT /maps/{mapId}/layers/{layerId}`**
+
+### Path parameters
+
+<ParamField path="mapId" type="string" required>
+  ID of the map that owns the layer.
+</ParamField>
+
+<ParamField path="layerId" type="string" required>
+  ID of the layer to update.
+</ParamField>
+
+### Body parameters
+
+<ParamField body="name" type="string">
+  Updated display name.
+</ParamField>
+
+<ParamField body="style" type="object">
+  Partial or full style object. Only the keys you include are overwritten.
+</ParamField>
+
+<ParamField body="filter" type="object">
+  Updated attribute filter. Pass `null` to remove an existing filter.
+</ParamField>
+
+<ParamField body="visible" type="boolean">
+  Set to `false` to hide the layer without removing it.
+</ParamField>
+
+Returns the full updated layer object.
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl -X PUT https://api.geowebhq.com/v1/maps/map_01hx9k2pqr/layers/lyr_01abc \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "style": {
+      "fill": "#f59e0b",
+      "fillOpacity": 0.5
+    },
+    "visible": true
+  }'
+```
+</CodeGroup>
+
+```json Response
+{
+  "id": "lyr_01abc",
+  "name": "Service Zones",
+  "sourceId": "src_xyz789",
+  "type": "polygon",
+  "style": {
+    "fill": "#f59e0b",
+    "fillOpacity": 0.5,
+    "stroke": "#1d4ed8",
+    "strokeWidth": 2
+  },
+  "filter": {
+    "attribute": "status",
+    "operator": "==",
+    "value": "active"
+  },
+  "visible": true,
+  "order": 1,
+  "createdAt": "2024-11-01T13:00:00Z",
+  "updatedAt": "2024-11-02T08:44:22Z"
+}
+```
+
+---
+
+## Remove a layer
+
+Remove a layer from a map. The data source the layer was connected to is **not** deleted.
+
+**`DELETE /maps/{mapId}/layers/{layerId}`**
+
+### Path parameters
+
+<ParamField path="mapId" type="string" required>
+  ID of the map that owns the layer.
+</ParamField>
+
+<ParamField path="layerId" type="string" required>
+  ID of the layer to remove.
+</ParamField>
+
+Returns **204 No Content** on success.
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl -X DELETE https://api.geowebhq.com/v1/maps/map_01hx9k2pqr/layers/lyr_01abc \
+  -H "Authorization: Bearer YOUR_API_KEY"
+```
+</CodeGroup>
+
+```text Response (204)
+(empty body)
+```
+
+---
+
+## Reorder layers
+
+Change the draw order of all layers on a map by supplying a complete, ordered array of layer IDs. The first ID in the array is rendered at the bottom; the last is rendered on top.
+
+**`POST /maps/{mapId}/layers/reorder`**
+
+<Tip>
+  You must include **all** layer IDs in the `order` array. Omitting a layer ID from the list returns a validation error.
+</Tip>
+
+### Path parameters
+
+<ParamField path="mapId" type="string" required>
+  ID of the map whose layer order you want to change.
+</ParamField>
+
+### Body parameters
+
+<ParamField body="order" type="array" required>
+  Complete ordered array of layer IDs. Index `0` is the bottom-most layer.
+</ParamField>
+
+Returns the updated ordered array of layer objects.
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.geowebhq.com/v1/maps/map_01hx9k2pqr/layers/reorder \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "order": ["lyr_terrain01", "lyr_01abc", "lyr_points02"]
+  }'
+```
+</CodeGroup>
+
+```json Response
+{
+  "data": [
+    {
+      "id": "lyr_terrain01",
+      "name": "Terrain Zones",
+      "order": 0
+    },
+    {
+      "id": "lyr_01abc",
+      "name": "Service Zones",
+      "order": 1
+    },
+    {
+      "id": "lyr_points02",
+      "name": "Asset Locations",
+      "order": 2
+    }
+  ]
+}
+```

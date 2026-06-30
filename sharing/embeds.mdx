@@ -1,0 +1,174 @@
+---
+title: "Embed Interactive Maps on Any Website or App"
+sidebarTitle: "Embeds"
+description: "Generate an iframe embed code for any published Geo Web IW map and add an interactive, live-updating map to your website, dashboard, or app."
+---
+
+Embedding a Geo Web IW map lets you bring live, interactive location intelligence directly into your own website, internal dashboard, or web application — no separate GIS viewer required. Embedded maps stay in sync with your published map, so any updates you push are reflected instantly for every visitor viewing the embed.
+
+<Note>
+  Embedded maps inherit the access settings of the underlying published map. A **Private** map cannot be embedded — viewers outside your workspace will see an access error. Make sure your map is published as **Public** or **Password Protected** before generating an embed code.
+</Note>
+
+---
+
+## Generate and Place Your Embed
+
+<Steps>
+  <Step title="Publish your map">
+    Before you can embed, your map must be published. Follow the steps in the [Publishing guide](/sharing/publishing) to generate a shareable link with your preferred access level.
+  </Step>
+  <Step title="Click 'Embed' in the published map settings">
+    In the editor, open the publishing panel and click the **Embed** tab. This opens the embed configuration panel.
+  </Step>
+  <Step title="Configure your embed options">
+    Use the visual controls to customise the appearance and behaviour of the embedded map:
+
+    - Set the **width** and **height** (pixels or percentage).
+    - Toggle **interactive controls**, **legend**, and **toolbar** visibility.
+    - Choose a **light** or **dark** theme.
+    - Optionally override the default zoom level and map center.
+
+    The preview updates in real time as you adjust each option.
+  </Step>
+  <Step title="Copy the iframe snippet">
+    Click **Copy Embed Code**. The full `<iframe>` snippet — with your chosen options appended as query parameters — is copied to your clipboard.
+  </Step>
+  <Step title="Paste into your HTML">
+    Paste the snippet anywhere in your HTML where you want the map to appear. No additional scripts or dependencies are needed for basic iframe embeds.
+  </Step>
+</Steps>
+
+<Tip>
+  Set `width="100%"` to make the embed fill its container responsively across different screen sizes. Pair it with a fixed `height` value (e.g., `500`) to maintain a consistent aspect ratio.
+</Tip>
+
+### Example iframe snippet
+
+```html
+<iframe
+  src="https://maps.geowebhq.com/embed/map_abc123"
+  width="100%"
+  height="500"
+  frameborder="0"
+  allowfullscreen
+></iframe>
+```
+
+---
+
+## Embed Options Reference
+
+Customise your embed by appending query parameters to the embed `src` URL. For example:
+
+```
+https://maps.geowebhq.com/embed/map_abc123?controls=false&theme=dark&zoom=10
+```
+
+| Parameter | Values | Description |
+|---|---|---|
+| `controls` | `true` \| `false` | Show or hide the zoom and pan controls. Defaults to `true`. |
+| `legend` | `true` \| `false` | Show or hide the layer legend panel. Defaults to `true`. |
+| `toolbar` | `true` \| `false` | Show or hide the map toolbar. Defaults to `true`. |
+| `theme` | `light` \| `dark` | Override the map colour theme. Defaults to the theme set in the editor. |
+| `zoom` | integer (0–22) | Override the default zoom level set when the map was published. |
+| `center` | `lat,lng` | Override the default map centre, e.g. `center=51.505,-0.09`. |
+
+Combine as many parameters as you need using `&` to separate them:
+
+```
+https://maps.geowebhq.com/embed/map_abc123?controls=false&legend=false&theme=dark&zoom=12&center=40.712,-74.006
+```
+
+---
+
+## JavaScript SDK Embed
+
+For React, Vue, or Angular applications, use the Geo Web IW JavaScript SDK instead of a raw `<iframe>`. The SDK component gives you programmatic control over the map state, supports event listeners, and integrates cleanly with your app's component lifecycle.
+
+<Tabs>
+  <Tab title="React">
+    Install the SDK package, then drop the `<GeoWebMap>` component wherever you want the map to appear:
+
+    ```bash
+    npm install @geowebhq/sdk
+    ```
+
+    ```jsx
+    import { GeoWebMap } from '@geowebhq/sdk';
+
+    export default function MapPage() {
+      return (
+        <div style={{ width: '100%', height: '500px' }}>
+          <GeoWebMap
+            mapId="map_abc123"
+            theme="dark"
+            controls={false}
+            zoom={10}
+            center={[51.505, -0.09]}
+            onLoad={(map) => console.log('Map loaded', map)}
+          />
+        </div>
+      );
+    }
+    ```
+  </Tab>
+  <Tab title="Vue">
+    ```bash
+    npm install @geowebhq/sdk
+    ```
+
+    ```vue
+    <template>
+      <div style="width: 100%; height: 500px">
+        <GeoWebMap
+          map-id="map_abc123"
+          theme="light"
+          :zoom="10"
+          :center="[51.505, -0.09]"
+          @load="onMapLoad"
+        />
+      </div>
+    </template>
+
+    <script setup>
+    import { GeoWebMap } from '@geowebhq/sdk/vue';
+
+    function onMapLoad(map) {
+      console.log('Map loaded', map);
+    }
+    </script>
+    ```
+  </Tab>
+  <Tab title="Angular">
+    ```bash
+    npm install @geowebhq/sdk
+    ```
+
+    ```typescript
+    // app.module.ts
+    import { GeoWebSdkModule } from '@geowebhq/sdk/angular';
+
+    @NgModule({
+      imports: [GeoWebSdkModule],
+    })
+    export class AppModule {}
+    ```
+
+    ```html
+    <!-- map.component.html -->
+    <geo-web-map
+      mapId="map_abc123"
+      theme="light"
+      [zoom]="10"
+      [center]="[51.505, -0.09]"
+      (load)="onMapLoad($event)"
+      style="width: 100%; height: 500px;"
+    ></geo-web-map>
+    ```
+  </Tab>
+</Tabs>
+
+<Info>
+  The JavaScript SDK requires a valid **API key** scoped to your workspace. Pass it as the `apiKey` prop or set the `GEOWEB_API_KEY` environment variable. API keys are available to Owner and Admin roles under **Settings → API Keys**.
+</Info>
