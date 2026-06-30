@@ -1,7 +1,7 @@
 ---
-title: "Set Up Your Geo Web IW Account and Workspace"
+title: "Set Up Your Geo Web IW Account, Team, and API Access"
 sidebarTitle: "Account Setup"
-description: "Create your Geo Web IW account, configure your workspace settings, invite team members, and generate your first API key."
+description: "Create your Geo Web IW account, configure workspace settings, invite team members with the right roles, and generate a secure API key."
 ---
 
 Before you start building maps and automating spatial workflows, you need a properly configured workspace. This page covers account creation, workspace preferences, team access control, and API key management â€” the foundational steps that keep your projects organized and secure.
@@ -85,8 +85,8 @@ API keys let you authenticate programmatic requests to the Geo Web IW REST API â
   After clicking **Create**, your new API key is displayed **once** in a highlighted box. Click **Copy to clipboard** immediately.
 
   ```bash
-  # Example: authenticate a dataset upload request
-  curl -X POST https://api.geowebhq.com/v1/datasets \
+  # Example: authenticate a data source upload request
+  curl -X POST https://api.geowebhq.com/v1/data/sources/upload \
     -H "Authorization: Bearer YOUR_API_KEY" \
     -H "Content-Type: application/json" \
     -d '{"name": "City Boundaries", "format": "geojson"}'

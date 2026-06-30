@@ -1,5 +1,5 @@
 ---
-title: "Export and Download Spatial Data from Geo Web IW"
+title: "Export and Download Your Spatial Data from Geo Web IW"
 sidebarTitle: "Exports"
 description: "Download your data as GeoJSON, Shapefile, or CSV from the UI or automate exports to cloud storage using the Geo Web IW workflow actions or REST API."
 ---
@@ -64,26 +64,26 @@ For a full guide on building automations, see the [Workflow Automation](/workflo
 
 Use the REST API to export a data source programmatically — useful for scripting one-off exports, integrating with CI pipelines, or pulling data into custom applications.
 
-Send a `GET` request to `/api/v1/data/sources/{id}/export` with the desired format as a query parameter.
+Send a `GET` request to `/data/sources/{id}/export` with the desired format as a query parameter.
 
 <CodeGroup>
   ```bash GeoJSON
   curl -X GET \
-    "https://app.geowebIW.com/api/v1/data/sources/src_abc123/export?format=geojson" \
+    "https://api.geowebhq.com/v1/data/sources/src_abc123/export?format=geojson" \
     -H "Authorization: Bearer <your-api-key>" \
     -o my-export.geojson
   ```
 
   ```bash Shapefile ZIP
   curl -X GET \
-    "https://app.geowebIW.com/api/v1/data/sources/src_abc123/export?format=shapefile" \
+    "https://api.geowebhq.com/v1/data/sources/src_abc123/export?format=shapefile" \
     -H "Authorization: Bearer <your-api-key>" \
     -o my-export.zip
   ```
 
   ```bash CSV
   curl -X GET \
-    "https://app.geowebIW.com/api/v1/data/sources/src_abc123/export?format=csv" \
+    "https://api.geowebhq.com/v1/data/sources/src_abc123/export?format=csv" \
     -H "Authorization: Bearer <your-api-key>" \
     -o my-export.csv
   ```

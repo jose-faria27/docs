@@ -1,7 +1,7 @@
 ---
-title: "Run Spatial Queries on Your Geo Web IW Data"
+title: "Run Spatial Queries on Your Map Data in Geo Web IW"
 sidebarTitle: "Spatial Queries"
-description: "Filter, intersect, buffer, and aggregate geospatial features using the Geo Web IW query builder or REST API without writing SQL."
+description: "Filter, intersect, buffer, and aggregate geospatial features using the Geo Web IW visual query builder or REST API — no SQL required."
 ---
 
 Spatial queries let you ask location-based questions about your data — find all stores within 2 km of a warehouse, count customer orders per sales territory, or isolate features that intersect a flood zone. Geo Web IW provides a visual query builder for interactive exploration and a REST API endpoint for integrating queries into automated workflows, all without writing a line of SQL.
@@ -46,13 +46,13 @@ When you're satisfied with the result, save the query as a named view or export 
 
 ## Running Queries via the API
 
-Every query you can build in the UI is also available through the REST API. Send a `POST` request to `/api/v1/data/query` with a JSON body that lists your source and the ordered array of operations.
+Every query you can build in the UI is also available through the REST API. Send a `POST` request to `/data/query` with a JSON body that lists your source and the ordered array of operations.
 
 **Authentication:** Include your API key in the `Authorization` header as `Bearer <your-api-key>`.
 
 <CodeGroup>
   ```bash cURL
-  curl -X POST https://app.geowebIW.com/api/v1/data/query \
+  curl -X POST https://api.geowebhq.com/v1/data/query \
     -H "Authorization: Bearer <your-api-key>" \
     -H "Content-Type: application/json" \
     -d '{
@@ -112,7 +112,7 @@ Every query you can build in the UI is also available through the REST API. Send
 </ParamField>
 
 <ParamField body="sourceId" type="string" required>
-  The ID of the data source to query. Found on the data source detail page or returned by `GET /api/v1/data/sources`.
+  The ID of the data source to query. Found on the data source detail page or returned by `GET /data/sources`.
 </ParamField>
 
 <ParamField body="operations" type="array" required>

@@ -75,7 +75,7 @@ Create a new data source by posting an inline GeoJSON `FeatureCollection`. All f
 **`POST /data/sources`**
 
 <Note>
-  For large datasets or file-based uploads (Shapefile, CSV, KML), use the multipart file upload endpoint at `POST /data/sources/upload` instead. That endpoint accepts `multipart/form-data` with a `file` field and the same `name` and `projectId` fields as form parts.
+  For large datasets or file-based uploads (Shapefile, CSV, KML), use the multipart file upload endpoint at `POST /data/sources/upload` instead. See the [Upload a file](#upload-a-file) section below.
 </Note>
 
 ### Body parameters
@@ -135,6 +135,60 @@ curl -X POST https://api.geowebhq.com/v1/data/sources \
   "featureCount": 1,
   "geometryType": "Polygon",
   "bbox": [-74.01, 40.71, -74.00, 40.72],
+  "crs": "EPSG:4326",
+  "createdAt": "2024-11-01T12:00:00Z",
+  "updatedAt": "2024-11-01T12:00:00Z"
+}
+```
+
+---
+
+## Upload a file
+
+Upload a geospatial file to create a new data source. Supported formats are GeoJSON, Shapefile (`.zip` containing `.shp`, `.dbf`, `.shx`, and optional `.prj`), CSV with longitude/latitude columns, and KML. The file is parsed, reprojected to EPSG:4326 if necessary, and stored as a queryable feature collection.
+
+**`POST /data/sources/upload`**
+
+<Note>
+  This endpoint accepts `multipart/form-data`. Do **not** set `Content-Type: application/json` — let your HTTP client set the multipart boundary automatically.
+</Note>
+
+### Form fields
+
+<ParamField body="name" type="string" required>
+  Display name for the new data source.
+</ParamField>
+
+<ParamField body="projectId" type="string" required>
+  ID of the project to store the source in.
+</ParamField>
+
+<ParamField body="file" type="file" required>
+  The file to upload. Accepted MIME types: `application/geo+json`, `application/zip` (Shapefile), `text/csv`, `application/vnd.google-earth.kml+xml`. Maximum file size is **50 MB**.
+</ParamField>
+
+Returns the created data source metadata object with HTTP **201 Created**.
+
+### Example
+
+<CodeGroup>
+```bash cURL
+curl -X POST https://api.geowebhq.com/v1/data/sources/upload \
+  -H "Authorization: Bearer YOUR_API_KEY" \
+  -F "name=Service Zones Q4" \
+  -F "projectId=proj_abc123" \
+  -F "file=@service-zones.zip;type=application/zip"
+```
+</CodeGroup>
+
+```json Response (201)
+{
+  "id": "src_xyz789",
+  "name": "Service Zones Q4",
+  "projectId": "proj_abc123",
+  "featureCount": 142,
+  "geometryType": "Polygon",
+  "bbox": [-74.259, 40.477, -73.700, 40.917],
   "crs": "EPSG:4326",
   "createdAt": "2024-11-01T12:00:00Z",
   "updatedAt": "2024-11-01T12:00:00Z"
